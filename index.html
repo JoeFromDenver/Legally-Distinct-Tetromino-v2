@@ -85,8 +85,11 @@
         /* --- UI Overlay Layer --- */
         #ui-layer {
             position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Let clicks pass through */
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -99,7 +102,7 @@
             border-radius: 12px;
             text-align: center;
             border: 2px solid #555;
-            pointer-events: auto;
+            pointer-events: auto; /* Re-enable clicks for buttons */
             box-shadow: 0 10px 40px rgba(0,0,0,0.9);
             width: 95%;
             max-width: 480px; 
@@ -252,7 +255,7 @@
             
             <!-- High Score Display on Start -->
             <div id="start-high-score" class="stat-row" style="margin-bottom: 20px; justify-content: center; border: none;">
-                <span style="color: #fcbf49;">BEST: <span id="start-high-score-val">0</span></span>
+                <span style="color: #fcbf49;">BEST: <span id="start-high-score-val">0</span> <span id="start-high-score-name" style="font-size:10px; color:#aaa"></span></span>
             </div>
 
             <!-- New Tight Controls Grid -->
@@ -678,8 +681,8 @@ class Game {
     }
 
     updateHighScoreDisplay() {
-        this.uiHighScoreStartVal.innerText = this.highScore;
-        this.uiHighScoreStartName.innerText = `(${this.highScoreName})`;
+        if (this.uiHighScoreStartVal) this.uiHighScoreStartVal.innerText = this.highScore;
+        if (this.uiHighScoreStartName) this.uiHighScoreStartName.innerText = `(${this.highScoreName})`;
     }
 
     saveHighScore() {
