@@ -37,7 +37,7 @@
             background-color: var(--bg-color);
             color: var(--text-color);
             font-family: var(--font-main);
-            height: 100dvh; 
+            height: 100dvh; /* Dynamic Viewport Height for Mobile */
             width: 100vw;
             display: flex;
             justify-content: center;
@@ -55,14 +55,16 @@
             flex-direction: column;
             align-items: center;
             justify-content: center; /* Center canvas vertically */
+            padding-bottom: env(safe-area-inset-bottom);
         }
 
         /* --- Canvas Layer --- */
         #game-canvas {
             display: block;
             margin: 0 auto;
-            flex-grow: 0; /* Don't stretch */
-            max-height: 100%;
+            flex-grow: 0; 
+            /* Ensure it never exceeds container */
+            max-height: 100%; 
             max-width: 100%;
         }
 
@@ -87,7 +89,7 @@
             box-shadow: 0 10px 40px rgba(0,0,0,0.9);
             width: 95%;
             max-width: 480px; 
-            max-height: 90dvh;
+            max-height: 95%;
             overflow-y: auto;
         }
 
@@ -221,7 +223,7 @@
                     <span class="key" style="font-size:7px;">SPACE</span>
                 </div>
                 <div class="c-col-or">or</div>
-                <div class="c-col-touch"><span class="touch-label">Dbl Tap</span></div>
+                <div class="c-col-touch"><span class="touch-label">Hold</span></div> <!-- Updated Label -->
 
                 <!-- Pause -->
                 <div class="c-col-action">Pause</div>
@@ -329,13 +331,13 @@ class Renderer {
     }
 
     resize() {
-        const margin = 20;
-        const availableHeight = window.innerHeight - margin; 
-        const availableWidth = window.innerWidth - margin;
+        // Use the #app container's size to respect 100dvh
+        const app = document.getElementById('app');
+        const availableHeight = app.clientHeight - 20; // 20px padding
+        const availableWidth = app.clientWidth - 20;
 
         let cellSize = Math.floor(availableHeight / ROWS);
-        // Space needed: 5 cols (Left UI) + 10 cols (Board) + 0.5 (Right Pad) = 15.5
-        const requiredCols = COLS + 5.5; 
+        const requiredCols = COLS + 5.5; // Left UI (5) + Board (10) + Pad (0.5)
 
         if (cellSize * requiredCols > availableWidth) {
             cellSize = Math.floor(availableWidth / requiredCols);
@@ -345,7 +347,6 @@ class Renderer {
         this.boardWidth = this.cellSize * COLS;
         this.boardHeight = this.cellSize * ROWS;
         
-        // Left margin is 5 cells wide for Title/UI
         this.sideMarginLeft = this.cellSize * 5; 
         this.sideMarginRight = this.cellSize * 0.5; 
         
@@ -468,14 +469,13 @@ class Renderer {
         if (holdPiece) {
             this.ctx.shadowBlur = 10;
             this.ctx.shadowColor = COLORS[holdPiece];
-            // Render piece centered at current Y plus offset
             this.drawPreviewPiece(holdPiece, cx, y + (this.cellSize)); 
             this.ctx.shadowBlur = 0;
         } else {
             this.ctx.fillStyle = '#333';
             this.ctx.fillText("---", cx, y + (this.cellSize));
         }
-        y += this.cellSize * 4; // Space for piece
+        y += this.cellSize * 4; 
 
         // --- NEXT ---
         this.ctx.fillStyle = '#aaa';
@@ -564,7 +564,6 @@ class Game {
         this.dropInterval = 1000;
         this.lastDropTime = 0;
 
-        // UI Refs (only for overlays now)
         this.screenStart = document.getElementById('start-screen');
         this.screenGameOver = document.getElementById('game-over-screen');
         this.btnStart = document.getElementById('btn-start');
@@ -639,19 +638,54 @@ class Game {
         });
 
         let touchStartX = 0, touchStartY = 0;
-        let lastTap = 0;
+        let longPressTimer = null;
+        let isLongPressHandled = false;
+        const LONG_PRESS_MS = 300;
 
         document.addEventListener('touchstart', (e) => {
             if (e.target.tagName === 'BUTTON' || e.target === this.nameInput) return;
-            if (e.touches.length === 2) { this.togglePause(); return; }
+            
+            if (e.touches.length === 2) {
+                this.togglePause();
+                return;
+            }
+
             touchStartX = e.changedTouches[0].screenX;
             touchStartY = e.changedTouches[0].screenY;
+            
+            // Start Long Press Timer
+            isLongPressHandled = false;
+            longPressTimer = setTimeout(() => {
+                this.hardDrop();
+                isLongPressHandled = true;
+                if(navigator.vibrate) navigator.vibrate(50); // Feedback
+            }, LONG_PRESS_MS);
+
             this.renderer.triggerInputPulse();
+        }, {passive: false});
+
+        // Add touchmove to cancel long press if dragging
+        document.addEventListener('touchmove', (e) => {
+             if (e.target.tagName === 'BUTTON' || e.target === this.nameInput) return;
+             // Prevent default scrolling
+             e.preventDefault(); 
+             
+             const x = e.changedTouches[0].screenX;
+             const y = e.changedTouches[0].screenY;
+             
+             // If moved more than 10px, cancel long press
+             if (Math.abs(x - touchStartX) > 10 || Math.abs(y - touchStartY) > 10) {
+                 clearTimeout(longPressTimer);
+             }
         }, {passive: false});
 
         document.addEventListener('touchend', (e) => {
             if (e.target.tagName === 'BUTTON' || e.target === this.nameInput) return;
+            
+            clearTimeout(longPressTimer); // Cancel timer
+            
             if (this.gameOver || this.isPaused) return;
+            if (isLongPressHandled) return; // Already handled
 
             const touchEndX = e.changedTouches[0].screenX;
             const touchEndY = e.changedTouches[0].screenY;
@@ -661,9 +695,7 @@ class Game {
             const absDy = Math.abs(dy);
 
             if (absDx < 10 && absDy < 10) {
-                const now = Date.now();
-                if (now - lastTap < 300) { this.hardDrop(); } else { this.rotate(); }
-                lastTap = now;
+                this.rotate(); // Single Tap
                 return;
             }
 
@@ -685,6 +717,7 @@ class Game {
         this.bag = [];
         this.holdPieceType = null;
         
+        this.updateUI();
         this.screenStart.classList.add('hidden');
         this.screenGameOver.classList.add('hidden');
         this.spawnPiece();
@@ -805,6 +838,12 @@ class Game {
             this.audio.playLineClear(linesCleared);
             if (this.lines > this.level * 10) { this.level++; this.dropInterval = Math.max(100, 1000 - (this.level * 50)); }
         }
+    }
+    updateUI() {
+        // Redraw UI on every update in case score/lines change
+        // In this canvas implementation, the loop() handles drawing, but we update text if needed?
+        // Actually, loop() draws UI every frame, so we don't need manual DOM updates unless we used DOM overlays.
+        // Wait, the UI (Score/Lines) is drawn on canvas in drawUI().
     }
 }
 
