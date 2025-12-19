@@ -434,36 +434,32 @@ class Renderer {
     }
 
     resize() {
-        // Calculate canvas dimensions to fit screen properly
-        // Use window.innerHeight to adapt to changes
-        const header = document.querySelector('header');
-        const headerHeight = header ? header.offsetHeight : 60;
-        const margin = 20;
+        const headerHeight = 80;
+        const availableHeight = window.innerHeight - headerHeight - 20; 
+        const availableWidth = window.innerWidth - 20;
 
-        // Calculate maximum available space for the game area
-        const availableHeight = window.innerHeight - headerHeight - margin;
-        const availableWidth = window.innerWidth - margin;
-
-        // Calculate cell size
+        // Calculate cell size based on height
         let cellSize = Math.floor(availableHeight / ROWS);
         
-        // If board width exceeds available width, scale down by width instead
-        if (cellSize * COLS > availableWidth) {
-            cellSize = Math.floor(availableWidth / COLS);
+        // Width check: Need space for 4(Left UI) + 10(Board) + 0.5(Right Pad) = 14.5 cols
+        const requiredCols = COLS + 4.5; 
+        if (cellSize * requiredCols > availableWidth) {
+            cellSize = Math.floor(availableWidth / requiredCols);
         }
         
-        // Ensure minimum visibility
         this.cellSize = Math.max(cellSize, 10);
-        
         this.boardWidth = this.cellSize * COLS;
         this.boardHeight = this.cellSize * ROWS;
-        this.sideMargin = this.cellSize * 4; 
         
-        this.canvas.width = this.boardWidth + (this.sideMargin * 2);
+        // Left margin is 4 cells wide for UI
+        this.sideMarginLeft = this.cellSize * 4; 
+        this.sideMarginRight = this.cellSize * 0.5; // Small right padding
+        
+        this.canvas.width = this.boardWidth + this.sideMarginLeft + this.sideMarginRight;
         this.canvas.height = this.boardHeight;
         
-        const totalContentWidth = this.boardWidth + (this.sideMargin * 2);
-        this.boardX = (this.canvas.width - this.boardWidth) / 2;
+        // Board starts after the left margin
+        this.boardX = this.sideMarginLeft;
         this.boardY = 0;
     }
 
@@ -559,29 +555,28 @@ class Renderer {
         this.ctx.font = '10px "Press Start 2P"';
         this.ctx.textAlign = 'center';
 
-        // --- HOLD (Left) ---
-        const leftCenter = (this.boardX) / 2;
-        this.ctx.fillText("HOLD", leftCenter, 30);
-        
+        const leftColX = this.sideMarginLeft / 2;
+
+        // --- HOLD (Top Left) ---
+        this.ctx.fillText("HOLD", leftColX, 30);
         if (holdPiece) {
             // Glow effect for hold area
             this.ctx.shadowBlur = 10;
             this.ctx.shadowColor = COLORS[holdPiece];
-            // Y position pushed down to 90 to avoid text overlap
-            this.drawPreviewPiece(holdPiece, leftCenter, 90); 
+            // Y=90 to clear text
+            this.drawPreviewPiece(holdPiece, leftColX, 90); 
             this.ctx.shadowBlur = 0;
         } else {
             this.ctx.fillStyle = '#333';
-            this.ctx.fillText("---", leftCenter, 90);
+            this.ctx.fillText("---", leftColX, 90);
         }
 
-        // --- NEXT (Right) ---
-        const rightCenter = this.boardX + this.boardWidth + (this.canvas.width - (this.boardX + this.boardWidth)) / 2;
+        // --- NEXT (Bottom Left) ---
         this.ctx.fillStyle = '#aaa';
-        this.ctx.fillText("NEXT", rightCenter, 30);
+        this.ctx.fillText("NEXT", leftColX, 200);
         if (nextPiece) {
-            // Y position pushed down to 90 to avoid text overlap
-            this.drawPreviewPiece(nextPiece, rightCenter, 90);
+            // Y=260 to clear text
+            this.drawPreviewPiece(nextPiece, leftColX, 260);
         }
     }
 
