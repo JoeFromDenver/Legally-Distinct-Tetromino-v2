@@ -1,6 +1,6 @@
 {
-  "name": "Legally Distinct Tetromino Game",
-  "short_name": "Tetromino",
+  "name": "Legally Distinct Tetromino v2",
+  "short_name": "Tetromino v2",
   "description": "A fun and engaging tetromino puzzle game, adapted for mobile play.",
   "start_url": "./index.html",
   "display": "standalone",
@@ -25,6 +25,6 @@
       "purpose": "any"
     }
   ],
-  "theme_color": "#3c3f43",
-  "background_color": "#3c3f43"
+  "theme_color": "#202124",
+  "background_color": "#202124"
 }
