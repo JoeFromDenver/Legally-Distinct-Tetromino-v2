@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Legally Distinct Tetromino v2</title>
     
-    <!-- Tone.js CDN (Restored for reliable audio) -->
+    <!-- Tone.js CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     
     <!-- Google Font -->
@@ -37,7 +37,8 @@
             background-color: var(--bg-color);
             color: var(--text-color);
             font-family: var(--font-main);
-            height: 100vh;
+            /* Use dynamic viewport height for mobile browsers */
+            height: 100dvh; 
             width: 100vw;
             display: flex;
             justify-content: center;
@@ -54,16 +55,19 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            /* Ensure content is centered but respects safe areas */
+            padding-bottom: env(safe-area-inset-bottom); 
         }
 
         /* --- Header --- */
         header {
             width: 100%;
-            padding: 15px 20px;
+            padding: 10px 20px; /* Reduced padding slightly */
             display: flex;
             justify-content: space-between;
             align-items: center;
             z-index: 10;
+            flex-shrink: 0; /* Prevent header squishing */
         }
 
         h1 {
@@ -80,6 +84,11 @@
         #game-canvas {
             display: block;
             margin: 0 auto;
+            /* Flex grow allows it to take up remaining space, 
+               but max-height prevents it from pushing header off */
+            flex-grow: 1; 
+            max-height: 100%;
+            object-fit: contain; /* Ensure it scales down nicely */
         }
 
         /* --- UI Overlay Layer --- */
@@ -106,6 +115,8 @@
             box-shadow: 0 10px 40px rgba(0,0,0,0.9);
             width: 95%;
             max-width: 480px; 
+            max-height: 90dvh; /* Prevent modal from being taller than screen */
+            overflow-y: auto; /* Allow scrolling if content is too tall */
         }
 
         .hidden { display: none !important; }
@@ -130,12 +141,12 @@
             background: #1a73e8;
             color: white;
             border: none;
-            padding: 18px 20px;
+            padding: 15px 20px; /* Slightly smaller padding */
             font-family: var(--font-main);
             font-size: 12px;
             border-radius: 4px;
             cursor: pointer;
-            margin-top: 20px;
+            margin-top: 15px;
             width: 100%;
             box-shadow: 0 4px 0 #0d47a1;
             transition: transform 0.05s;
@@ -148,26 +159,26 @@
         .controls-grid {
             display: grid;
             /* Action (tight) | Keys (tight) | or (fixed) | Touch (rest) */
-            grid-template-columns: max-content max-content 30px auto; 
-            gap: 15px 10px; /* Gap between columns | Gap between rows */
+            grid-template-columns: max-content max-content 25px auto; 
+            gap: 12px 5px; /* Reduced vertical gap */
             text-align: left;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             width: 100%;
-            justify-content: center; /* Center the whole grid in the modal */
+            justify-content: center;
             align-items: center;
         }
 
         .c-col-action {
-            font-size: 10px;
+            font-size: 9px; /* Slightly smaller font */
             color: #888;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            line-height: 1.6;
+            line-height: 1.4;
         }
 
         .c-col-keys {
             text-align: right;
-            font-size: 10px;
+            font-size: 9px;
             color: #fff;
             display: flex;
             justify-content: flex-end;
@@ -182,7 +193,7 @@
 
         .c-col-touch {
             text-align: left;
-            font-size: 10px;
+            font-size: 9px;
             color: #fcbf49;
             display: flex;
             align-items: center;
@@ -194,35 +205,35 @@
             justify-content: center;
             align-items: center;
             background: #444;
-            padding: 0 6px;
-            border-radius: 4px;
+            padding: 0 5px;
+            border-radius: 3px;
             color: #fcbf49;
             border-bottom: 2px solid #222;
-            font-size: 9px;
-            height: 24px;
-            min-width: 24px;
-            margin-left: 4px;
+            font-size: 8px;
+            height: 20px; /* Slightly smaller */
+            min-width: 20px;
+            margin-left: 3px;
         }
         
         .touch-label {
             display: inline-block;
-            padding: 4px 6px;
-            border-radius: 4px;
+            padding: 3px 5px;
+            border-radius: 3px;
             background: #333;
             border: 1px solid #444;
-            font-size: 9px;
+            font-size: 8px;
             color: #eee;
             white-space: nowrap;
         }
 
-        .arrow-icon { width: 10px; height: 10px; fill: currentColor; }
+        .arrow-icon { width: 8px; height: 8px; fill: currentColor; } /* Smaller icon */
 
         /* --- Name Input --- */
-        .name-input-group { margin: 20px 0; text-align: center; }
+        .name-input-group { margin: 15px 0; text-align: center; }
         .name-input {
             background: #222; border: 2px solid #555; color: #fcbf49;
-            font-family: var(--font-main); font-size: 16px; padding: 10px;
-            width: 150px; text-align: center; border-radius: 4px;
+            font-family: var(--font-main); font-size: 14px; padding: 8px;
+            width: 140px; text-align: center; border-radius: 4px;
             text-transform: uppercase; letter-spacing: 2px;
         }
         .name-input:focus { outline: none; border-color: var(--accent-color); }
@@ -296,10 +307,10 @@
                 <!-- Hard Drop -->
                 <div class="c-col-action">Hard Drop</div>
                 <div class="c-col-keys">
-                    <span class="key" style="font-size:8px;">SPACE</span>
+                    <span class="key" style="font-size:7px;">SPACE</span>
                 </div>
                 <div class="c-col-or">or</div>
-                <div class="c-col-touch"><span class="touch-label">Double Tap</span></div>
+                <div class="c-col-touch"><span class="touch-label">Dbl Tap</span></div>
 
                 <!-- Pause -->
                 <div class="c-col-action">Pause</div>
@@ -307,7 +318,7 @@
                     <span class="key">P</span>
                 </div>
                 <div class="c-col-or">or</div>
-                <div class="c-col-touch"><span class="touch-label">2-Finger Tap</span></div>
+                <div class="c-col-touch"><span class="touch-label">2-Finger</span></div>
             </div>
 
             <button id="btn-start">START GAME</button>
@@ -423,16 +434,27 @@ class Renderer {
     }
 
     resize() {
-        const headerHeight = 80;
-        const availableHeight = window.innerHeight - headerHeight - 20; 
-        const availableWidth = window.innerWidth - 20;
-        
+        // Calculate canvas dimensions to fit screen properly
+        // Use window.innerHeight to adapt to changes
+        const header = document.querySelector('header');
+        const headerHeight = header ? header.offsetHeight : 60;
+        const margin = 20;
+
+        // Calculate maximum available space for the game area
+        const availableHeight = window.innerHeight - headerHeight - margin;
+        const availableWidth = window.innerWidth - margin;
+
+        // Calculate cell size
         let cellSize = Math.floor(availableHeight / ROWS);
+        
+        // If board width exceeds available width, scale down by width instead
         if (cellSize * COLS > availableWidth) {
             cellSize = Math.floor(availableWidth / COLS);
         }
         
-        this.cellSize = cellSize;
+        // Ensure minimum visibility
+        this.cellSize = Math.max(cellSize, 10);
+        
         this.boardWidth = this.cellSize * COLS;
         this.boardHeight = this.cellSize * ROWS;
         this.sideMargin = this.cellSize * 4; 
