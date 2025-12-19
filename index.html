@@ -5,15 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Legally Distinct Tetromino v2</title>
     
-    <!-- Local Audio Engine (Offline Capable) -->
-    <script src="./js/Tone.js"></script>
+    <!-- Tone.js CDN (Restored for reliable audio) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     
-    <!-- Google Font (Note: Fonts still require internet unless downloaded locally) -->
+    <!-- Google Font -->
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     
     <!-- PWA Manifest Link -->
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#202124">
+
+    <!-- Favicons -->
+    <link rel="icon" href="./icons/favicon.ico">
+    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
 
     <style>
         :root {
@@ -22,6 +26,7 @@
             --text-color: #f0f0f0;
             --accent-color: #fb8c00; /* Magic Orange */
             --font-main: 'Press Start 2P', monospace;
+            --glow-color: rgba(255, 255, 255, 0.5);
         }
 
         * { box-sizing: border-box; touch-action: none; user-select: none; -webkit-user-select: none; }
@@ -44,7 +49,7 @@
             position: relative;
             width: 100%;
             height: 100%;
-            max-width: 500px; /* Mobile constraint */
+            max-width: 600px;
             background-color: var(--bg-color);
             display: flex;
             flex-direction: column;
@@ -62,12 +67,13 @@
         }
 
         h1 {
-            font-size: 12px;
+            font-size: 11px;
             line-height: 1.6;
             margin: 0;
             text-align: left;
             color: #fff;
             text-shadow: 2px 2px 0px #000;
+            max-width: 200px;
         }
 
         /* --- Canvas Layer --- */
@@ -79,11 +85,8 @@
         /* --- UI Overlay Layer --- */
         #ui-layer {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none; /* Let clicks pass through */
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -95,107 +98,131 @@
             padding: 25px;
             border-radius: 12px;
             text-align: center;
-            border: 2px solid #444;
-            pointer-events: auto; /* Re-enable clicks for buttons */
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-            width: 90%;
-            max-width: 380px;
+            border: 2px solid #555;
+            pointer-events: auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.9);
+            width: 95%;
+            max-width: 480px; 
         }
 
         .hidden { display: none !important; }
 
-        h2 { font-size: 20px; margin-bottom: 20px; color: var(--accent-color); }
-        
-        /* Stats row for Game Over / Pause */
+        h2 { font-size: 18px; margin-bottom: 20px; color: var(--accent-color); }
+
+        /* --- Stats --- */
         .stat-row {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
             font-size: 12px;
             color: #aaa;
             border-bottom: 1px solid #444;
             padding-bottom: 5px;
         }
         .stat-val { color: #fff; }
-        .high-score { color: #fcbf49; } /* Gold color for high score */
+        .high-score { color: #fcbf49; }
 
+        /* --- Buttons --- */
         button {
             background: #1a73e8;
             color: white;
             border: none;
             padding: 18px 20px;
             font-family: var(--font-main);
-            font-size: 14px;
+            font-size: 12px;
             border-radius: 4px;
             cursor: pointer;
-            margin-top: 15px;
+            margin-top: 20px;
             width: 100%;
             box-shadow: 0 4px 0 #0d47a1;
-            transition: transform 0.1s;
+            transition: transform 0.05s;
         }
         button:active { transform: translateY(4px); box-shadow: 0 0 0 #0d47a1; }
         button.secondary { background: #555; box-shadow: 0 4px 0 #333; }
         button.secondary:active { box-shadow: 0 0 0 #333; }
 
-        /* --- New Controls Grid Layout --- */
+        /* --- NEW 4-Column Controls Grid (Tight Layout) --- */
         .controls-grid {
             display: grid;
-            grid-template-columns: max-content 1fr; /* Action takes min space, Inputs take rest */
-            gap: 12px 20px;
+            /* Action (tight) | Keys (tight) | or (fixed) | Touch (rest) */
+            grid-template-columns: max-content max-content 30px auto; 
+            gap: 15px 10px; /* Gap between columns | Gap between rows */
             text-align: left;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             width: 100%;
+            justify-content: center; /* Center the whole grid in the modal */
             align-items: center;
         }
 
-        .control-label {
+        .c-col-action {
             font-size: 10px;
-            color: #aaa;
+            color: #888;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
+            line-height: 1.6;
         }
 
-        .control-inputs {
+        .c-col-keys {
             text-align: right;
             font-size: 10px;
             color: #fff;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
         }
 
-        /* UPDATED: Flexbox-based Key Styling for Uniformity */
+        .c-col-or {
+            text-align: center;
+            font-size: 8px;
+            color: #555;
+        }
+
+        .c-col-touch {
+            text-align: left;
+            font-size: 10px;
+            color: #fcbf49;
+            display: flex;
+            align-items: center;
+        }
+
+        /* --- Keys & Icons --- */
         .key {
-            display: inline-flex;       /* Use flexbox to center content */
-            justify-content: center;    /* Center horizontally */
-            align-items: center;        /* Center vertically */
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
             background: #444;
-            padding: 0 6px;             /* Horizontal padding only */
+            padding: 0 6px;
             border-radius: 4px;
             color: #fcbf49;
             border-bottom: 2px solid #222;
             font-size: 9px;
-            margin: 0 2px;
-            height: 22px;               /* Fixed Height */
-            min-width: 22px;            /* Fixed Minimum Width (forces square for single chars) */
-            line-height: normal;        /* Reset line-height to let flex handle centering */
-            vertical-align: middle;     /* Align with text around it */
+            height: 24px;
+            min-width: 24px;
+            margin-left: 4px;
         }
         
-        /* New Arrow Icon Style */
-        .arrow-icon {
-            width: 10px;
-            height: 10px;
-            fill: currentColor;
-            display: block;
-        }
-        
-        .divider {
-            color: #666;
-            font-size: 8px;
-            margin: 0 2px;
-            vertical-align: middle;
+        .touch-label {
+            display: inline-block;
+            padding: 4px 6px;
+            border-radius: 4px;
+            background: #333;
+            border: 1px solid #444;
+            font-size: 9px;
+            color: #eee;
+            white-space: nowrap;
         }
 
-        /* --- Virtual Controls Hidden (Gesture Only) --- */
-        #virtual-controls { display: none; }
+        .arrow-icon { width: 10px; height: 10px; fill: currentColor; }
+
+        /* --- Name Input --- */
+        .name-input-group { margin: 20px 0; text-align: center; }
+        .name-input {
+            background: #222; border: 2px solid #555; color: #fcbf49;
+            font-family: var(--font-main); font-size: 16px; padding: 10px;
+            width: 150px; text-align: center; border-radius: 4px;
+            text-transform: uppercase; letter-spacing: 2px;
+        }
+        .name-input:focus { outline: none; border-color: var(--accent-color); }
 
     </style>
 </head>
@@ -204,7 +231,7 @@
 <div id="app">
     <!-- Header with Stats -->
     <header>
-        <h1>Legally Distinct<br><span style="color:var(--accent-color)">Tetromino v2</span></h1>
+        <h1>Legally Distinct<br>Tetromino <span style="color:var(--accent-color)">v2</span></h1>
         <div style="text-align: right; font-size: 10px;">
             <div style="color:#888; margin-bottom:2px;">SCORE</div>
             <div id="score-val" style="font-size: 14px; margin-bottom:6px; color:#fff;">0</div>
@@ -228,37 +255,56 @@
                 <span style="color: #fcbf49;">BEST: <span id="start-high-score-val">0</span></span>
             </div>
 
-            <!-- Redesigned Controls Grid -->
+            <!-- New Tight Controls Grid -->
             <div class="controls-grid">
-                <div class="control-label">Move</div>
-                <div class="control-inputs">
-                    <span class="key"><svg class="arrow-icon" viewBox="0 0 10 10"><path d="M7 2 L3 5 L7 8 Z"/></svg></span> / <span class="key"><svg class="arrow-icon" viewBox="0 0 10 10"><path d="M3 2 L7 5 L3 8 Z"/></svg></span> <span class="divider">or</span> <span class="key">Swipe</span>
+                <!-- Move -->
+                <div class="c-col-action">Move</div>
+                <div class="c-col-keys">
+                    <span class="key"><svg class="arrow-icon" viewBox="0 0 10 10"><path d="M7 2 L3 5 L7 8 Z"/></svg></span>
+                    <span class="key"><svg class="arrow-icon" viewBox="0 0 10 10"><path d="M3 2 L7 5 L3 8 Z"/></svg></span>
                 </div>
+                <div class="c-col-or">or</div>
+                <div class="c-col-touch"><span class="touch-label">Swipe L/R</span></div>
 
-                <div class="control-label">Rotate</div>
-                <div class="control-inputs">
-                    <span class="key"><svg class="arrow-icon" viewBox="0 0 10 10"><path d="M2 7 L5 3 L8 7 Z"/></svg></span> <span class="divider">or</span> <span class="key">Tap</span>
+                <!-- Rotate -->
+                <div class="c-col-action">Rotate</div>
+                <div class="c-col-keys">
+                    <span class="key"><svg class="arrow-icon" viewBox="0 0 10 10"><path d="M2 7 L5 3 L8 7 Z"/></svg></span>
                 </div>
+                <div class="c-col-or">or</div>
+                <div class="c-col-touch"><span class="touch-label">Tap</span></div>
 
-                <div class="control-label">Soft Drop</div>
-                <div class="control-inputs">
-                    <span class="key"><svg class="arrow-icon" viewBox="0 0 10 10"><path d="M2 3 L5 7 L8 3 Z"/></svg></span> <span class="divider">or</span> <span class="key">Swipe ↓</span>
+                <!-- Soft Drop -->
+                <div class="c-col-action">Soft Drop</div>
+                <div class="c-col-keys">
+                    <span class="key"><svg class="arrow-icon" viewBox="0 0 10 10"><path d="M2 3 L5 7 L8 3 Z"/></svg></span>
                 </div>
+                <div class="c-col-or">or</div>
+                <div class="c-col-touch"><span class="touch-label">Swipe Down</span></div>
 
-                <div class="control-label">Hold Piece</div>
-                <div class="control-inputs">
-                    <span class="key">C</span> <span class="divider">or</span> <span class="key">Swipe ↑</span>
+                <!-- Hold -->
+                <div class="c-col-action">Hold Piece</div>
+                <div class="c-col-keys">
+                    <span class="key">C</span>
                 </div>
+                <div class="c-col-or">or</div>
+                <div class="c-col-touch"><span class="touch-label">Swipe Up</span></div>
 
-                <div class="control-label">Hard Drop</div>
-                <div class="control-inputs">
-                    <span class="key">Space</span> <span class="divider">or</span> <span class="key">Dbl Tap</span>
+                <!-- Hard Drop -->
+                <div class="c-col-action">Hard Drop</div>
+                <div class="c-col-keys">
+                    <span class="key" style="font-size:8px;">SPACE</span>
                 </div>
+                <div class="c-col-or">or</div>
+                <div class="c-col-touch"><span class="touch-label">Double Tap</span></div>
 
-                <div class="control-label">Pause</div>
-                <div class="control-inputs">
-                    <span class="key">P</span> <span class="divider">or</span> <span class="key">2-Finger</span>
+                <!-- Pause -->
+                <div class="c-col-action">Pause</div>
+                <div class="c-col-keys">
+                    <span class="key">P</span>
                 </div>
+                <div class="c-col-or">or</div>
+                <div class="c-col-touch"><span class="touch-label">2-Finger Tap</span></div>
             </div>
 
             <button id="btn-start">START GAME</button>
@@ -269,27 +315,24 @@
         <div id="game-over-screen" class="screen hidden">
             <h2 style="color:#ff5252">GAME OVER</h2>
             <div class="stat-row"><span>Final Score</span><span class="stat-val" id="final-score">0</span></div>
-            <div class="stat-row"><span>High Score</span><span class="stat-val high-score" id="final-high-score">0</span></div>
             <div class="stat-row"><span>Lines Cleared</span><span class="stat-val" id="final-lines">0</span></div>
-            <br>
-            <button id="btn-restart">TRY AGAIN</button>
+            
+            <div class="name-input-group">
+                <div style="font-size:10px; margin-bottom:5px; color:#aaa;">ENTER NAME (5 CHARS)</div>
+                <input type="text" id="high-score-name" class="name-input" maxlength="5" placeholder="NAME">
+            </div>
+
+            <button id="btn-restart">NEW GAME</button>
             <button id="btn-quit" class="secondary">QUIT</button>
         </div>
     </div>
 </div>
 
 <script>
-// Check for Tone.js (Warning if not downloaded)
-if (typeof Tone === 'undefined') {
-    alert("Warning: Tone.js not found. Audio will not work.\nPlease ensure 'js/Tone.js' exists locally.");
-}
-
-// Service Worker Registration
+// --- Service Worker ---
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-            .then(reg => console.log('Service Worker registered!', reg))
-            .catch(err => console.log('Service Worker registration failed', err));
+        navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW registration failed', err));
     });
 }
 
@@ -300,7 +343,7 @@ if ('serviceWorker' in navigator) {
  */
 const COLS = 10;
 const ROWS = 20;
-const BLOCK_SIZE = 30; // Base size, scaled by canvas
+const BLOCK_SIZE = 30; 
 const COLORS = {
     I: '#00f0f0', O: '#f0f000', T: '#a000f0', S: '#00f000', Z: '#f00000', J: '#0000f0', L: '#f0a000',
     GHOST: 'rgba(255, 255, 255, 0.15)',
@@ -320,12 +363,14 @@ const SHAPES = {
 
 /**
  * ------------------------------------------------------------------
- * AUDIO ENGINE (Tone.js)
+ * AUDIO ENGINE
  * ------------------------------------------------------------------
  */
 class AudioController {
     constructor() {
-        if (typeof Tone === 'undefined') return;
+        this.enabled = typeof Tone !== 'undefined';
+        if (!this.enabled) return;
+        
         this.synth = new Tone.PolySynth(Tone.Synth).toDestination();
         this.synth.volume.value = -12;
         this.pluck = new Tone.PluckSynth().toDestination();
@@ -339,7 +384,7 @@ class AudioController {
     }
 
     async init() {
-        if (typeof Tone !== 'undefined' && !this.initialized) {
+        if (this.enabled && !this.initialized) {
             await Tone.start();
             this.initialized = true;
         }
@@ -351,8 +396,8 @@ class AudioController {
     playLock() { if(this.initialized) this.synth.triggerAttackRelease(["C4", "E4"], "16n"); }
     playLineClear(count) {
         if (!this.initialized) return;
-        if (count >= 4) this.synth.triggerAttackRelease(["C4", "E4", "G4", "C5", "E5"], "8n");
-        else this.synth.triggerAttackRelease(["C4", "E4", "G4"], "16n");
+        const notes = count >= 4 ? ["C4", "E4", "G4", "C5", "E5"] : ["C4", "E4", "G4"];
+        this.synth.triggerAttackRelease(notes, count >= 4 ? "8n" : "16n");
     }
     playGameOver() { if(this.initialized) this.synth.triggerAttackRelease(["C3", "Bb2", "Ab2", "G2"], "4n"); }
     playHold() { if(this.initialized) this.pluck.triggerAttack("G3"); }
@@ -360,7 +405,7 @@ class AudioController {
 
 /**
  * ------------------------------------------------------------------
- * RENDERER (Canvas)
+ * RENDERER
  * ------------------------------------------------------------------
  */
 class Renderer {
@@ -368,7 +413,8 @@ class Renderer {
         this.canvas = document.getElementById(canvasId);
         this.ctx = this.canvas.getContext('2d');
         this.particles = [];
-        this.glowIntensity = 0;
+        this.glowIntensity = 1;
+        this.activeColor = '#ffffff'; 
         this.resize();
         window.addEventListener('resize', () => this.resize());
     }
@@ -377,7 +423,7 @@ class Renderer {
         const headerHeight = 80;
         const availableHeight = window.innerHeight - headerHeight - 20; 
         const availableWidth = window.innerWidth - 20;
-
+        
         let cellSize = Math.floor(availableHeight / ROWS);
         if (cellSize * COLS > availableWidth) {
             cellSize = Math.floor(availableWidth / COLS);
@@ -386,13 +432,13 @@ class Renderer {
         this.cellSize = cellSize;
         this.boardWidth = this.cellSize * COLS;
         this.boardHeight = this.cellSize * ROWS;
-        
         this.sideMargin = this.cellSize * 4; 
         
         this.canvas.width = this.boardWidth + (this.sideMargin * 2);
         this.canvas.height = this.boardHeight;
         
-        this.boardX = this.sideMargin;
+        const totalContentWidth = this.boardWidth + (this.sideMargin * 2);
+        this.boardX = (this.canvas.width - this.boardWidth) / 2;
         this.boardY = 0;
     }
 
@@ -402,9 +448,18 @@ class Renderer {
     }
 
     drawBoard(boardMatrix) {
-        this.ctx.strokeStyle = COLORS.GRID;
-        this.ctx.lineWidth = 1;
+        // Dynamic Border Glow based on active piece
+        this.ctx.strokeStyle = this.activeColor;
+        this.ctx.lineWidth = 2;
+        
+        // Modified glow: slower, fainter dimmest point
+        this.ctx.globalAlpha = Math.max(0.2, this.glowIntensity); 
+        this.ctx.shadowBlur = 10 * this.glowIntensity;
+        this.ctx.shadowColor = this.activeColor;
         this.ctx.strokeRect(this.boardX, this.boardY, this.boardWidth, this.boardHeight);
+        
+        this.ctx.globalAlpha = 1.0; // Reset
+        this.ctx.shadowBlur = 0; // Reset
 
         boardMatrix.forEach((row, y) => {
             row.forEach((value, x) => {
@@ -415,7 +470,7 @@ class Renderer {
         });
     }
 
-    drawBlock(x, y, color, isGhost = false, isGlowy = false) {
+    drawBlock(x, y, color, isGhost = false, isActive = false) {
         const size = this.cellSize;
         
         if (isGhost) {
@@ -429,14 +484,16 @@ class Renderer {
 
         this.ctx.fillStyle = color;
         this.ctx.fillRect(x + 1, y + 1, size - 2, size - 2);
-
+        
+        // Highlight
         this.ctx.fillStyle = 'rgba(255,255,255,0.3)';
         this.ctx.fillRect(x + 1, y + 1, size - 2, size/4);
         
-        if (isGlowy) {
-            this.ctx.shadowBlur = 15 * this.glowIntensity;
+        // Active Piece Glow
+        if (isActive) {
+            this.ctx.shadowBlur = 20 * this.glowIntensity;
             this.ctx.shadowColor = color;
-            this.ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+            this.ctx.strokeStyle = 'rgba(255,255,255,0.8)';
             this.ctx.lineWidth = 2;
             this.ctx.strokeRect(x, y, size, size);
             this.ctx.shadowBlur = 0; 
@@ -445,7 +502,9 @@ class Renderer {
 
     drawPiece(piece, ghostY) {
         if (!piece) return;
+        this.activeColor = COLORS[piece.typeId]; // Update border color
 
+        // Ghost
         if (ghostY !== null) {
             piece.shape.forEach((row, y) => {
                 row.forEach((value, x) => {
@@ -458,12 +517,13 @@ class Renderer {
             });
         }
 
+        // Active
         piece.shape.forEach((row, y) => {
             row.forEach((value, x) => {
                 if (value) {
                     const px = this.boardX + (piece.x + x) * this.cellSize;
                     const py = this.boardY + (piece.y + y) * this.cellSize;
-                    this.drawBlock(px, py, COLORS[piece.typeId], false, true);
+                    this.drawBlock(px, py, COLORS[piece.typeId], false, true); 
                 }
             });
         });
@@ -474,20 +534,29 @@ class Renderer {
         this.ctx.font = '10px "Press Start 2P"';
         this.ctx.textAlign = 'center';
 
-        const leftCenter = this.boardX / 2;
+        // --- HOLD (Left) ---
+        const leftCenter = (this.boardX) / 2;
         this.ctx.fillText("HOLD", leftCenter, 30);
+        
         if (holdPiece) {
-            this.drawPreviewPiece(holdPiece, leftCenter, 80); 
+            // Glow effect for hold area
+            this.ctx.shadowBlur = 10;
+            this.ctx.shadowColor = COLORS[holdPiece];
+            // Y position pushed down to 90 to avoid text overlap
+            this.drawPreviewPiece(holdPiece, leftCenter, 90); 
+            this.ctx.shadowBlur = 0;
         } else {
             this.ctx.fillStyle = '#333';
-            this.ctx.fillText("---", leftCenter, 80);
+            this.ctx.fillText("---", leftCenter, 90);
         }
 
-        const rightCenter = this.boardX + this.boardWidth + (this.sideMargin / 2);
+        // --- NEXT (Right) ---
+        const rightCenter = this.boardX + this.boardWidth + (this.canvas.width - (this.boardX + this.boardWidth)) / 2;
         this.ctx.fillStyle = '#aaa';
         this.ctx.fillText("NEXT", rightCenter, 30);
         if (nextPiece) {
-            this.drawPreviewPiece(nextPiece, rightCenter, 80); 
+            // Y position pushed down to 90 to avoid text overlap
+            this.drawPreviewPiece(nextPiece, rightCenter, 90);
         }
     }
 
@@ -544,8 +613,13 @@ class Renderer {
     }
 
     animateGlow() {
-        const time = Date.now() / 500; 
-        this.glowIntensity = 1 + Math.sin(time) * 0.5;
+        // Slow breathing effect
+        const time = Date.now() / 1500; 
+        this.glowIntensity = 0.5 + Math.sin(time) * 0.4; // Range 0.1 to 0.9 (approx)
+    }
+
+    triggerInputPulse() {
+        this.glowIntensity = 1.8; 
     }
 }
 
@@ -563,7 +637,10 @@ class Game {
         this.score = 0;
         this.lines = 0;
         this.level = 1;
-        this.highScore = parseInt(localStorage.getItem('tetromino_highscore')) || 0;
+        
+        const savedData = JSON.parse(localStorage.getItem('ldt_highscore')) || { name: 'AAA', score: 0 };
+        this.highScore = savedData.score;
+        this.highScoreName = savedData.name;
         
         this.gameOver = false;
         this.isPaused = false;
@@ -586,12 +663,11 @@ class Game {
         this.title = document.getElementById('screen-title');
         
         // High Score Elements
-        this.uiHighScoreStart = document.getElementById('start-high-score-val');
-        this.uiHighScoreFinal = document.getElementById('final-high-score');
-        
-        // Init High Score Display
-        this.updateHighScoreDisplay();
+        this.uiHighScoreStartVal = document.getElementById('start-high-score-val');
+        this.uiHighScoreStartName = document.getElementById('start-high-score-name');
+        this.nameInput = document.getElementById('high-score-name');
 
+        this.updateHighScoreDisplay();
         this.bindEvents();
         this.loop = this.loop.bind(this);
         this.requestId = null;
@@ -602,27 +678,63 @@ class Game {
     }
 
     updateHighScoreDisplay() {
-        this.uiHighScoreStart.innerText = this.highScore;
-        this.uiHighScoreFinal.innerText = this.highScore;
+        this.uiHighScoreStartVal.innerText = this.highScore;
+        this.uiHighScoreStartName.innerText = `(${this.highScoreName})`;
+    }
+
+    saveHighScore() {
+        if (this.score > this.highScore) {
+            let name = this.nameInput.value.trim().toUpperCase() || "ANON";
+            this.highScore = this.score;
+            this.highScoreName = name;
+            localStorage.setItem('ldt_highscore', JSON.stringify({ name: name, score: this.score }));
+            this.updateHighScoreDisplay();
+        }
     }
 
     bindEvents() {
         this.btnStart.addEventListener('click', () => { this.audio.init(); this.start(); });
         this.btnResume.addEventListener('click', () => this.togglePause());
-        this.btnRestart.addEventListener('click', () => this.start());
+        
+        this.btnRestart.addEventListener('click', () => {
+            this.saveHighScore();
+            this.start();
+        });
+        
         this.btnQuit.addEventListener('click', () => {
-            // Quit to start screen
+            this.saveHighScore();
             this.screenGameOver.classList.add('hidden');
             this.screenStart.classList.remove('hidden');
             this.title.innerText = "CONTROLS";
             this.btnStart.classList.remove('hidden');
             this.btnResume.classList.add('hidden');
-            this.renderer.clear(); // clear board
+            this.renderer.clear();
         });
+
+        // Name input logic
+        if(this.nameInput) {
+             this.nameInput.addEventListener('focus', () => {
+                this.nameInput.select();
+             });
+             this.nameInput.addEventListener('keydown', (e) => {
+                 e.stopPropagation(); // Stop game controls
+                 if (e.key === 'Enter') {
+                     this.saveHighScore();
+                     this.start();
+                 }
+             });
+        }
 
         document.addEventListener('keydown', (e) => {
             if (this.gameOver) return;
+            if (document.activeElement === this.nameInput) return;
+
             if (this.isPaused && e.key.toLowerCase() !== 'p') return;
+
+            if (['ArrowLeft','ArrowRight','ArrowDown','ArrowUp','c',' '].includes(e.key)) {
+                this.renderer.triggerInputPulse();
+            }
+
             switch(e.key) {
                 case 'ArrowLeft': this.move(-1); break;
                 case 'ArrowRight': this.move(1); break;
@@ -634,14 +746,12 @@ class Game {
             }
         });
 
-        // Touch handling
         let touchStartX = 0, touchStartY = 0;
         let lastTap = 0;
 
         document.addEventListener('touchstart', (e) => {
-            if (e.target.tagName === 'BUTTON') return;
+            if (e.target.tagName === 'BUTTON' || e.target === this.nameInput) return;
             
-            // 2-Finger Tap for Pause
             if (e.touches.length === 2) {
                 this.togglePause();
                 return;
@@ -649,10 +759,11 @@ class Game {
 
             touchStartX = e.changedTouches[0].screenX;
             touchStartY = e.changedTouches[0].screenY;
+            this.renderer.triggerInputPulse();
         }, {passive: false});
 
         document.addEventListener('touchend', (e) => {
-            if (e.target.tagName === 'BUTTON') return;
+            if (e.target.tagName === 'BUTTON' || e.target === this.nameInput) return;
             if (this.gameOver || this.isPaused) return;
 
             const touchEndX = e.changedTouches[0].screenX;
@@ -662,27 +773,23 @@ class Game {
             const absDx = Math.abs(dx);
             const absDy = Math.abs(dy);
 
-            // Tap Detection
             if (absDx < 10 && absDy < 10) {
                 const now = Date.now();
                 if (now - lastTap < 300) {
-                    this.hardDrop(); // Double tap
+                    this.hardDrop(); 
                 } else {
-                    this.rotate(); // Single tap
+                    this.rotate(); 
                 }
                 lastTap = now;
                 return;
             }
 
-            // Swipe Detection
             if (absDx > absDy) {
-                // Horizontal
                 if (dx > 30) this.move(1);
                 else if (dx < -30) this.move(-1);
             } else {
-                // Vertical
-                if (dy > 30) this.drop(); // Swipe Down = Drop
-                else if (dy < -30) this.hold(); // Swipe Up = Hold
+                if (dy > 30) this.drop(); 
+                else if (dy < -30) this.hold(); 
             }
         }, {passive: false});
     }
@@ -696,11 +803,12 @@ class Game {
         this.isPaused = false;
         this.bag = [];
         this.holdPieceType = null;
-        this.canHold = true;
+        
         this.updateUI();
         this.screenStart.classList.add('hidden');
         this.screenGameOver.classList.add('hidden');
         this.spawnPiece();
+        
         if (this.requestId) cancelAnimationFrame(this.requestId);
         this.lastDropTime = Date.now();
         this.loop();
@@ -725,16 +833,17 @@ class Game {
         this.gameOver = true;
         this.audio.playGameOver();
         
-        // High Score Check
         if (this.score > this.highScore) {
             this.highScore = this.score;
-            localStorage.setItem('tetromino_highscore', this.highScore);
+            // Name saved on next start or quit
         }
         
         document.getElementById('final-score').innerText = this.score;
         document.getElementById('final-lines').innerText = this.lines;
-        this.updateHighScoreDisplay();
-        
+        if (this.highScoreName !== 'ANON') {
+            this.nameInput.value = this.highScoreName;
+        }
+
         this.screenGameOver.classList.remove('hidden');
     }
 
@@ -785,6 +894,7 @@ class Game {
     hold() {
         if (!this.canHold || this.isPaused || this.gameOver) return;
         this.audio.playHold();
+        
         if (this.holdPieceType === null) {
             this.holdPieceType = this.currentPiece.typeId;
             this.spawnPiece();
@@ -793,7 +903,7 @@ class Game {
             this.currentPiece = { typeId: this.holdPieceType, shape: SHAPES[this.holdPieceType], x: 3, y: 0 };
             this.holdPieceType = temp;
         }
-        this.canHold = false;
+        // Unlimited swaps allowed
     }
 
     move(dir) { if (this.isValid(dir, 0)) { this.currentPiece.x += dir; this.audio.playMove(); } }
