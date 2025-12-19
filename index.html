@@ -37,7 +37,6 @@
             background-color: var(--bg-color);
             color: var(--text-color);
             font-family: var(--font-main);
-            /* Use dynamic viewport height for mobile browsers */
             height: 100dvh; 
             width: 100vw;
             display: flex;
@@ -55,50 +54,23 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            /* Ensure content is centered but respects safe areas */
-            padding-bottom: env(safe-area-inset-bottom); 
-        }
-
-        /* --- Header --- */
-        header {
-            width: 100%;
-            padding: 10px 20px; /* Reduced padding slightly */
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            z-index: 10;
-            flex-shrink: 0; /* Prevent header squishing */
-        }
-
-        h1 {
-            font-size: 11px;
-            line-height: 1.6;
-            margin: 0;
-            text-align: left;
-            color: #fff;
-            text-shadow: 2px 2px 0px #000;
-            max-width: 200px;
+            justify-content: center; /* Center canvas vertically */
         }
 
         /* --- Canvas Layer --- */
         #game-canvas {
             display: block;
             margin: 0 auto;
-            /* Flex grow allows it to take up remaining space, 
-               but max-height prevents it from pushing header off */
-            flex-grow: 1; 
+            flex-grow: 0; /* Don't stretch */
             max-height: 100%;
-            object-fit: contain; /* Ensure it scales down nicely */
+            max-width: 100%;
         }
 
         /* --- UI Overlay Layer --- */
         #ui-layer {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none; /* Let clicks pass through */
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -111,12 +83,12 @@
             border-radius: 12px;
             text-align: center;
             border: 2px solid #555;
-            pointer-events: auto; /* Re-enable clicks for buttons */
+            pointer-events: auto;
             box-shadow: 0 10px 40px rgba(0,0,0,0.9);
             width: 95%;
             max-width: 480px; 
-            max-height: 90dvh; /* Prevent modal from being taller than screen */
-            overflow-y: auto; /* Allow scrolling if content is too tall */
+            max-height: 90dvh;
+            overflow-y: auto;
         }
 
         .hidden { display: none !important; }
@@ -141,7 +113,7 @@
             background: #1a73e8;
             color: white;
             border: none;
-            padding: 15px 20px; /* Slightly smaller padding */
+            padding: 15px 20px;
             font-family: var(--font-main);
             font-size: 12px;
             border-radius: 4px;
@@ -155,12 +127,11 @@
         button.secondary { background: #555; box-shadow: 0 4px 0 #333; }
         button.secondary:active { box-shadow: 0 0 0 #333; }
 
-        /* --- NEW 4-Column Controls Grid (Tight Layout) --- */
+        /* --- Controls Grid --- */
         .controls-grid {
             display: grid;
-            /* Action (tight) | Keys (tight) | or (fixed) | Touch (rest) */
             grid-template-columns: max-content max-content 25px auto; 
-            gap: 12px 5px; /* Reduced vertical gap */
+            gap: 12px 5px;
             text-align: left;
             margin-bottom: 15px;
             width: 100%;
@@ -168,74 +139,27 @@
             align-items: center;
         }
 
-        .c-col-action {
-            font-size: 9px; /* Slightly smaller font */
-            color: #888;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            line-height: 1.4;
-        }
+        .c-col-action { font-size: 9px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.4; }
+        .c-col-keys { text-align: right; font-size: 9px; color: #fff; display: flex; justify-content: flex-end; align-items: center; }
+        .c-col-or { text-align: center; font-size: 8px; color: #555; }
+        .c-col-touch { text-align: left; font-size: 9px; color: #fcbf49; display: flex; align-items: center; }
 
-        .c-col-keys {
-            text-align: right;
-            font-size: 9px;
-            color: #fff;
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-        }
-
-        .c-col-or {
-            text-align: center;
-            font-size: 8px;
-            color: #555;
-        }
-
-        .c-col-touch {
-            text-align: left;
-            font-size: 9px;
-            color: #fcbf49;
-            display: flex;
-            align-items: center;
-        }
-
-        /* --- Keys & Icons --- */
         .key {
-            display: inline-flex;
-            justify-content: center;
-            align-items: center;
-            background: #444;
-            padding: 0 5px;
-            border-radius: 3px;
-            color: #fcbf49;
-            border-bottom: 2px solid #222;
-            font-size: 8px;
-            height: 20px; /* Slightly smaller */
-            min-width: 20px;
-            margin-left: 3px;
+            display: inline-flex; justify-content: center; align-items: center;
+            background: #444; padding: 0 5px; border-radius: 3px;
+            color: #fcbf49; border-bottom: 2px solid #222;
+            font-size: 8px; height: 20px; min-width: 20px; margin-left: 3px;
         }
         
         .touch-label {
-            display: inline-block;
-            padding: 3px 5px;
-            border-radius: 3px;
-            background: #333;
-            border: 1px solid #444;
-            font-size: 8px;
-            color: #eee;
-            white-space: nowrap;
+            display: inline-block; padding: 3px 5px; border-radius: 3px;
+            background: #333; border: 1px solid #444;
+            font-size: 8px; color: #eee; white-space: nowrap;
         }
 
-        .arrow-icon { width: 8px; height: 8px; fill: currentColor; } /* Smaller icon */
-
-        /* --- Name Input --- */
+        .arrow-icon { width: 8px; height: 8px; fill: currentColor; }
         .name-input-group { margin: 15px 0; text-align: center; }
-        .name-input {
-            background: #222; border: 2px solid #555; color: #fcbf49;
-            font-family: var(--font-main); font-size: 14px; padding: 8px;
-            width: 140px; text-align: center; border-radius: 4px;
-            text-transform: uppercase; letter-spacing: 2px;
-        }
+        .name-input { background: #222; border: 2px solid #555; color: #fcbf49; font-family: var(--font-main); font-size: 14px; padding: 8px; width: 140px; text-align: center; border-radius: 4px; text-transform: uppercase; letter-spacing: 2px; }
         .name-input:focus { outline: none; border-color: var(--accent-color); }
 
     </style>
@@ -243,33 +167,20 @@
 <body>
 
 <div id="app">
-    <!-- Header with Stats -->
-    <header>
-        <h1>Legally Distinct<br>Tetromino <span style="color:var(--accent-color)">v2</span></h1>
-        <div style="text-align: right; font-size: 10px;">
-            <div style="color:#888; margin-bottom:2px;">SCORE</div>
-            <div id="score-val" style="font-size: 14px; margin-bottom:6px; color:#fff;">0</div>
-            <div style="color:#888; margin-bottom:2px;">LINES</div>
-            <div id="lines-val" style="font-size: 14px; color:#fff;">0</div>
-        </div>
-    </header>
-
-    <!-- Main Canvas -->
+    <!-- Header Removed - Info now on Canvas -->
+    
     <canvas id="game-canvas"></canvas>
 
-    <!-- UI Overlay -->
     <div id="ui-layer">
         
         <!-- Start / Pause / Controls Screen -->
         <div id="start-screen" class="screen">
             <h2 id="screen-title">CONTROLS</h2>
             
-            <!-- High Score Display on Start -->
             <div id="start-high-score" class="stat-row" style="margin-bottom: 20px; justify-content: center; border: none;">
                 <span style="color: #fcbf49;">BEST: <span id="start-high-score-val">0</span> <span id="start-high-score-name" style="font-size:10px; color:#aaa"></span></span>
             </div>
 
-            <!-- New Tight Controls Grid -->
             <div class="controls-grid">
                 <!-- Move -->
                 <div class="c-col-action">Move</div>
@@ -350,14 +261,8 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-/**
- * ------------------------------------------------------------------
- * CONSTANTS & CONFIG
- * ------------------------------------------------------------------
- */
 const COLS = 10;
 const ROWS = 20;
-const BLOCK_SIZE = 30; 
 const COLORS = {
     I: '#00f0f0', O: '#f0f000', T: '#a000f0', S: '#00f000', Z: '#f00000', J: '#0000f0', L: '#f0a000',
     GHOST: 'rgba(255, 255, 255, 0.15)',
@@ -375,11 +280,6 @@ const SHAPES = {
     Z: [[1,1,0], [0,1,1], [0,0,0]]
 };
 
-/**
- * ------------------------------------------------------------------
- * AUDIO ENGINE
- * ------------------------------------------------------------------
- */
 class AudioController {
     constructor() {
         this.enabled = typeof Tone !== 'undefined';
@@ -417,11 +317,6 @@ class AudioController {
     playHold() { if(this.initialized) this.pluck.triggerAttack("G3"); }
 }
 
-/**
- * ------------------------------------------------------------------
- * RENDERER
- * ------------------------------------------------------------------
- */
 class Renderer {
     constructor(canvasId) {
         this.canvas = document.getElementById(canvasId);
@@ -434,15 +329,14 @@ class Renderer {
     }
 
     resize() {
-        const headerHeight = 80;
-        const availableHeight = window.innerHeight - headerHeight - 20; 
-        const availableWidth = window.innerWidth - 20;
+        const margin = 20;
+        const availableHeight = window.innerHeight - margin; 
+        const availableWidth = window.innerWidth - margin;
 
-        // Calculate cell size based on height
         let cellSize = Math.floor(availableHeight / ROWS);
-        
-        // Width check: Need space for 4(Left UI) + 10(Board) + 0.5(Right Pad) = 14.5 cols
-        const requiredCols = COLS + 4.5; 
+        // Space needed: 5 cols (Left UI) + 10 cols (Board) + 0.5 (Right Pad) = 15.5
+        const requiredCols = COLS + 5.5; 
+
         if (cellSize * requiredCols > availableWidth) {
             cellSize = Math.floor(availableWidth / requiredCols);
         }
@@ -451,14 +345,13 @@ class Renderer {
         this.boardWidth = this.cellSize * COLS;
         this.boardHeight = this.cellSize * ROWS;
         
-        // Left margin is 4 cells wide for UI
-        this.sideMarginLeft = this.cellSize * 4; 
-        this.sideMarginRight = this.cellSize * 0.5; // Small right padding
+        // Left margin is 5 cells wide for Title/UI
+        this.sideMarginLeft = this.cellSize * 5; 
+        this.sideMarginRight = this.cellSize * 0.5; 
         
         this.canvas.width = this.boardWidth + this.sideMarginLeft + this.sideMarginRight;
         this.canvas.height = this.boardHeight;
         
-        // Board starts after the left margin
         this.boardX = this.sideMarginLeft;
         this.boardY = 0;
     }
@@ -469,18 +362,14 @@ class Renderer {
     }
 
     drawBoard(boardMatrix) {
-        // Dynamic Border Glow based on active piece
         this.ctx.strokeStyle = this.activeColor;
         this.ctx.lineWidth = 2;
-        
-        // Modified glow: slower, fainter dimmest point
         this.ctx.globalAlpha = Math.max(0.2, this.glowIntensity); 
         this.ctx.shadowBlur = 10 * this.glowIntensity;
         this.ctx.shadowColor = this.activeColor;
         this.ctx.strokeRect(this.boardX, this.boardY, this.boardWidth, this.boardHeight);
-        
-        this.ctx.globalAlpha = 1.0; // Reset
-        this.ctx.shadowBlur = 0; // Reset
+        this.ctx.globalAlpha = 1.0; 
+        this.ctx.shadowBlur = 0; 
 
         boardMatrix.forEach((row, y) => {
             row.forEach((value, x) => {
@@ -493,7 +382,6 @@ class Renderer {
 
     drawBlock(x, y, color, isGhost = false, isActive = false) {
         const size = this.cellSize;
-        
         if (isGhost) {
             this.ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
             this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
@@ -502,15 +390,10 @@ class Renderer {
             this.ctx.strokeRect(x + 1, y + 1, size - 2, size - 2);
             return;
         }
-
         this.ctx.fillStyle = color;
         this.ctx.fillRect(x + 1, y + 1, size - 2, size - 2);
-        
-        // Highlight
         this.ctx.fillStyle = 'rgba(255,255,255,0.3)';
         this.ctx.fillRect(x + 1, y + 1, size - 2, size/4);
-        
-        // Active Piece Glow
         if (isActive) {
             this.ctx.shadowBlur = 20 * this.glowIntensity;
             this.ctx.shadowColor = color;
@@ -523,9 +406,7 @@ class Renderer {
 
     drawPiece(piece, ghostY) {
         if (!piece) return;
-        this.activeColor = COLORS[piece.typeId]; // Update border color
-
-        // Ghost
+        this.activeColor = COLORS[piece.typeId]; 
         if (ghostY !== null) {
             piece.shape.forEach((row, y) => {
                 row.forEach((value, x) => {
@@ -537,8 +418,6 @@ class Renderer {
                 });
             });
         }
-
-        // Active
         piece.shape.forEach((row, y) => {
             row.forEach((value, x) => {
                 if (value) {
@@ -551,32 +430,58 @@ class Renderer {
     }
 
     drawUI(score, lines, nextPiece, holdPiece) {
-        this.ctx.fillStyle = '#aaa';
-        this.ctx.font = '10px "Press Start 2P"';
+        const fs = Math.max(9, Math.floor(this.cellSize * 0.4)); // Scale text
+        this.ctx.font = `${fs}px "Press Start 2P"`;
         this.ctx.textAlign = 'center';
 
-        const leftColX = this.sideMarginLeft / 2;
+        const cx = this.sideMarginLeft / 2; // Center of Left Panel
+        let y = this.cellSize * 2;
 
-        // --- HOLD (Top Left) ---
-        this.ctx.fillText("HOLD", leftColX, 30);
+        // --- TITLE ---
+        this.ctx.fillStyle = '#888';
+        this.ctx.fillText("LEGALLY", cx, y); y += fs * 1.5;
+        this.ctx.fillText("DISTINCT", cx, y); y += fs * 1.5;
+        this.ctx.fillStyle = '#fff';
+        this.ctx.fillText("TETROMINO", cx, y); y += fs * 1.5;
+        this.ctx.fillStyle = COLORS.L; // Orange
+        this.ctx.fillText("v2", cx, y); y += fs * 3;
+
+        // --- SCORE ---
+        this.ctx.fillStyle = '#888';
+        this.ctx.fillText("SCORE", cx, y); y += fs * 1.5;
+        this.ctx.fillStyle = '#fff';
+        this.ctx.font = `${fs+2}px "Press Start 2P"`;
+        this.ctx.fillText(score, cx, y); y += fs * 3;
+
+        // --- LINES ---
+        this.ctx.font = `${fs}px "Press Start 2P"`;
+        this.ctx.fillStyle = '#888';
+        this.ctx.fillText("LINES", cx, y); y += fs * 1.5;
+        this.ctx.fillStyle = '#fff';
+        this.ctx.font = `${fs+2}px "Press Start 2P"`;
+        this.ctx.fillText(lines, cx, y); y += fs * 4;
+
+        // --- HOLD ---
+        this.ctx.font = `${fs}px "Press Start 2P"`;
+        this.ctx.fillStyle = '#aaa';
+        this.ctx.fillText("HOLD", cx, y); y += fs * 1.2;
         if (holdPiece) {
-            // Glow effect for hold area
             this.ctx.shadowBlur = 10;
             this.ctx.shadowColor = COLORS[holdPiece];
-            // Y=90 to clear text
-            this.drawPreviewPiece(holdPiece, leftColX, 90); 
+            // Render piece centered at current Y plus offset
+            this.drawPreviewPiece(holdPiece, cx, y + (this.cellSize)); 
             this.ctx.shadowBlur = 0;
         } else {
             this.ctx.fillStyle = '#333';
-            this.ctx.fillText("---", leftColX, 90);
+            this.ctx.fillText("---", cx, y + (this.cellSize));
         }
+        y += this.cellSize * 4; // Space for piece
 
-        // --- NEXT (Bottom Left) ---
+        // --- NEXT ---
         this.ctx.fillStyle = '#aaa';
-        this.ctx.fillText("NEXT", leftColX, 200);
+        this.ctx.fillText("NEXT", cx, y); y += fs * 1.2;
         if (nextPiece) {
-            // Y=260 to clear text
-            this.drawPreviewPiece(nextPiece, leftColX, 260);
+            this.drawPreviewPiece(nextPiece, cx, y + (this.cellSize));
         }
     }
 
@@ -584,16 +489,11 @@ class Renderer {
         const shape = SHAPES[typeId];
         const color = COLORS[typeId];
         const size = this.cellSize * 0.7;
-        
         const w = shape[0].length * size;
         const h = shape.length * size;
         const startX = cx - w / 2;
         const startY = cy - h / 2;
-
         this.ctx.fillStyle = color;
-        this.ctx.shadowBlur = 10;
-        this.ctx.shadowColor = color;
-        
         shape.forEach((row, y) => {
             row.forEach((val, x) => {
                 if (val) {
@@ -601,7 +501,6 @@ class Renderer {
                 }
             });
         });
-        this.ctx.shadowBlur = 0;
     }
 
     createExplosion(rowIdx) {
@@ -633,9 +532,8 @@ class Renderer {
     }
 
     animateGlow() {
-        // Slow breathing effect
         const time = Date.now() / 1500; 
-        this.glowIntensity = 0.5 + Math.sin(time) * 0.4; // Range 0.1 to 0.9 (approx)
+        this.glowIntensity = 0.5 + Math.sin(time) * 0.4; 
     }
 
     triggerInputPulse() {
@@ -643,11 +541,6 @@ class Renderer {
     }
 }
 
-/**
- * ------------------------------------------------------------------
- * GAME LOGIC
- * ------------------------------------------------------------------
- */
 class Game {
     constructor() {
         this.renderer = new Renderer('game-canvas');
@@ -671,9 +564,7 @@ class Game {
         this.dropInterval = 1000;
         this.lastDropTime = 0;
 
-        // UI Refs
-        this.uiScore = document.getElementById('score-val');
-        this.uiLines = document.getElementById('lines-val');
+        // UI Refs (only for overlays now)
         this.screenStart = document.getElementById('start-screen');
         this.screenGameOver = document.getElementById('game-over-screen');
         this.btnStart = document.getElementById('btn-start');
@@ -682,7 +573,6 @@ class Game {
         this.btnQuit = document.getElementById('btn-quit');
         this.title = document.getElementById('screen-title');
         
-        // High Score Elements
         this.uiHighScoreStartVal = document.getElementById('start-high-score-val');
         this.uiHighScoreStartName = document.getElementById('start-high-score-name');
         this.nameInput = document.getElementById('high-score-name');
@@ -715,12 +605,7 @@ class Game {
     bindEvents() {
         this.btnStart.addEventListener('click', () => { this.audio.init(); this.start(); });
         this.btnResume.addEventListener('click', () => this.togglePause());
-        
-        this.btnRestart.addEventListener('click', () => {
-            this.saveHighScore();
-            this.start();
-        });
-        
+        this.btnRestart.addEventListener('click', () => { this.saveHighScore(); this.start(); });
         this.btnQuit.addEventListener('click', () => {
             this.saveHighScore();
             this.screenGameOver.classList.add('hidden');
@@ -731,29 +616,16 @@ class Game {
             this.renderer.clear();
         });
 
-        // Name input logic
         if(this.nameInput) {
-             this.nameInput.addEventListener('focus', () => {
-                this.nameInput.select();
-             });
-             this.nameInput.addEventListener('keydown', (e) => {
-                 e.stopPropagation(); // Stop game controls
-                 if (e.key === 'Enter') {
-                     this.saveHighScore();
-                     this.start();
-                 }
-             });
+             this.nameInput.addEventListener('focus', () => { this.nameInput.select(); });
+             this.nameInput.addEventListener('keydown', (e) => { e.stopPropagation(); if (e.key === 'Enter') { this.saveHighScore(); this.start(); } });
         }
 
         document.addEventListener('keydown', (e) => {
             if (this.gameOver) return;
             if (document.activeElement === this.nameInput) return;
-
             if (this.isPaused && e.key.toLowerCase() !== 'p') return;
-
-            if (['ArrowLeft','ArrowRight','ArrowDown','ArrowUp','c',' '].includes(e.key)) {
-                this.renderer.triggerInputPulse();
-            }
+            if (['ArrowLeft','ArrowRight','ArrowDown','ArrowUp','c',' '].includes(e.key)) { this.renderer.triggerInputPulse(); }
 
             switch(e.key) {
                 case 'ArrowLeft': this.move(-1); break;
@@ -771,12 +643,7 @@ class Game {
 
         document.addEventListener('touchstart', (e) => {
             if (e.target.tagName === 'BUTTON' || e.target === this.nameInput) return;
-            
-            if (e.touches.length === 2) {
-                this.togglePause();
-                return;
-            }
-
+            if (e.touches.length === 2) { this.togglePause(); return; }
             touchStartX = e.changedTouches[0].screenX;
             touchStartY = e.changedTouches[0].screenY;
             this.renderer.triggerInputPulse();
@@ -795,21 +662,15 @@ class Game {
 
             if (absDx < 10 && absDy < 10) {
                 const now = Date.now();
-                if (now - lastTap < 300) {
-                    this.hardDrop(); 
-                } else {
-                    this.rotate(); 
-                }
+                if (now - lastTap < 300) { this.hardDrop(); } else { this.rotate(); }
                 lastTap = now;
                 return;
             }
 
             if (absDx > absDy) {
-                if (dx > 30) this.move(1);
-                else if (dx < -30) this.move(-1);
+                if (dx > 30) this.move(1); else if (dx < -30) this.move(-1);
             } else {
-                if (dy > 30) this.drop(); 
-                else if (dy < -30) this.hold(); 
+                if (dy > 30) this.drop(); else if (dy < -30) this.hold();
             }
         }, {passive: false});
     }
@@ -824,11 +685,9 @@ class Game {
         this.bag = [];
         this.holdPieceType = null;
         
-        this.updateUI();
         this.screenStart.classList.add('hidden');
         this.screenGameOver.classList.add('hidden');
         this.spawnPiece();
-        
         if (this.requestId) cancelAnimationFrame(this.requestId);
         this.lastDropTime = Date.now();
         this.loop();
@@ -852,17 +711,11 @@ class Game {
     endGame() {
         this.gameOver = true;
         this.audio.playGameOver();
-        
-        if (this.score > this.highScore) {
-            this.highScore = this.score;
-            // Name saved on next start or quit
-        }
+        if (this.score > this.highScore) { this.highScore = this.score; }
         
         document.getElementById('final-score').innerText = this.score;
         document.getElementById('final-lines').innerText = this.lines;
-        if (this.highScoreName !== 'ANON') {
-            this.nameInput.value = this.highScoreName;
-        }
+        if (this.highScoreName !== 'ANON') { this.nameInput.value = this.highScoreName; }
 
         this.screenGameOver.classList.remove('hidden');
     }
@@ -871,19 +724,14 @@ class Game {
         if (this.isPaused || this.gameOver) return;
         const now = Date.now();
         const delta = now - this.lastDropTime;
-        if (delta > this.dropInterval) {
-            this.drop();
-            this.lastDropTime = now;
-        }
+        if (delta > this.dropInterval) { this.drop(); this.lastDropTime = now; }
         this.renderer.animateGlow();
         this.renderer.clear();
         this.renderer.drawBoard(this.board);
         let ghostY = null;
         if (this.currentPiece) {
             ghostY = this.currentPiece.y;
-            while (this.isValid(0, 1, this.currentPiece.shape, this.currentPiece.x, ghostY)) {
-                ghostY++;
-            }
+            while (this.isValid(0, 1, this.currentPiece.shape, this.currentPiece.x, ghostY)) { ghostY++; }
         }
         this.renderer.drawPiece(this.currentPiece, ghostY);
         this.renderer.drawParticles();
@@ -894,14 +742,10 @@ class Game {
     getPieceType() {
         if (this.bag.length === 0) {
             this.bag = ['I','J','L','O','S','T','Z'];
-            for (let i = this.bag.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [this.bag[i], this.bag[j]] = [this.bag[j], this.bag[i]];
-            }
+            for (let i = this.bag.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [this.bag[i], this.bag[j]] = [this.bag[j], this.bag[i]]; }
         }
         return this.bag.pop();
     }
-
     spawnPiece() {
         if (!this.nextPieceType) this.nextPieceType = this.getPieceType();
         const type = this.nextPieceType;
@@ -910,11 +754,9 @@ class Game {
         if (!this.isValid(0, 0)) { this.endGame(); }
         this.canHold = true;
     }
-
     hold() {
         if (!this.canHold || this.isPaused || this.gameOver) return;
         this.audio.playHold();
-        
         if (this.holdPieceType === null) {
             this.holdPieceType = this.currentPiece.typeId;
             this.spawnPiece();
@@ -923,58 +765,28 @@ class Game {
             this.currentPiece = { typeId: this.holdPieceType, shape: SHAPES[this.holdPieceType], x: 3, y: 0 };
             this.holdPieceType = temp;
         }
-        // Unlimited swaps allowed
     }
-
     move(dir) { if (this.isValid(dir, 0)) { this.currentPiece.x += dir; this.audio.playMove(); } }
-
     rotate() {
         const piece = this.currentPiece;
         const temp = JSON.parse(JSON.stringify(piece.shape));
-        for (let y = 0; y < temp.length; ++y) {
-            for (let x = 0; x < y; ++x) { [temp[x][y], temp[y][x]] = [temp[y][x], temp[x][y]]; }
-        }
+        for (let y = 0; y < temp.length; ++y) { for (let x = 0; x < y; ++x) { [temp[x][y], temp[y][x]] = [temp[y][x], temp[x][y]]; } }
         temp.forEach(row => row.reverse());
         if (this.isValid(0, 0, temp)) { piece.shape = temp; this.audio.playRotate(); }
-        else {
-            if (this.isValid(1, 0, temp)) { piece.x += 1; piece.shape = temp; this.audio.playRotate(); }
-            else if (this.isValid(-1, 0, temp)) { piece.x -= 1; piece.shape = temp; this.audio.playRotate(); }
-        }
+        else { if (this.isValid(1, 0, temp)) { piece.x += 1; piece.shape = temp; this.audio.playRotate(); } else if (this.isValid(-1, 0, temp)) { piece.x -= 1; piece.shape = temp; this.audio.playRotate(); } }
     }
-
     drop() { if (this.isValid(0, 1)) { this.currentPiece.y++; } else { this.lock(); } }
-
     hardDrop() { while (this.isValid(0, 1)) { this.currentPiece.y++; } this.audio.playDrop(); this.lock(); }
-
     isValid(offsetX, offsetY, shape = this.currentPiece.shape, pX = this.currentPiece.x, pY = this.currentPiece.y) {
-        for (let y = 0; y < shape.length; y++) {
-            for (let x = 0; x < shape[y].length; x++) {
-                if (shape[y][x]) {
-                    const newX = pX + x + offsetX;
-                    const newY = pY + y + offsetY;
-                    if (newX < 0 || newX >= COLS || newY >= ROWS) return false;
-                    if (newY >= 0 && this.board[newY][newX]) return false;
-                }
-            }
-        }
+        for (let y = 0; y < shape.length; y++) { for (let x = 0; x < shape[y].length; x++) { if (shape[y][x]) { const newX = pX + x + offsetX; const newY = pY + y + offsetY; if (newX < 0 || newX >= COLS || newY >= ROWS) return false; if (newY >= 0 && this.board[newY][newX]) return false; } } }
         return true;
     }
-
     lock() {
         this.audio.playLock();
-        this.currentPiece.shape.forEach((row, y) => {
-            row.forEach((val, x) => {
-                if (val) {
-                    const by = this.currentPiece.y + y;
-                    const bx = this.currentPiece.x + x;
-                    if (by >= 0) this.board[by][bx] = this.currentPiece.typeId;
-                }
-            });
-        });
+        this.currentPiece.shape.forEach((row, y) => { row.forEach((val, x) => { if (val) { const by = this.currentPiece.y + y; const bx = this.currentPiece.x + x; if (by >= 0) this.board[by][bx] = this.currentPiece.typeId; } }); });
         this.checkLines();
         this.spawnPiece();
     }
-
     checkLines() {
         let linesCleared = 0;
         for (let y = ROWS - 1; y >= 0; y--) {
@@ -991,17 +803,8 @@ class Game {
             const points = [0, 40, 100, 300, 1200];
             this.score += points[linesCleared] * this.level;
             this.audio.playLineClear(linesCleared);
-            this.updateUI();
-            if (this.lines > this.level * 10) {
-                this.level++;
-                this.dropInterval = Math.max(100, 1000 - (this.level * 50));
-            }
+            if (this.lines > this.level * 10) { this.level++; this.dropInterval = Math.max(100, 1000 - (this.level * 50)); }
         }
-    }
-
-    updateUI() {
-        this.uiScore.innerText = this.score;
-        this.uiLines.innerText = this.lines;
     }
 }
 
