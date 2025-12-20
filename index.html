@@ -37,7 +37,7 @@
             background-color: var(--bg-color);
             color: var(--text-color);
             font-family: var(--font-main);
-            height: 100dvh; /* Dynamic Viewport Height for Mobile */
+            height: 100dvh; 
             width: 100vw;
             display: flex;
             justify-content: center;
@@ -54,18 +54,16 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center; /* Center canvas vertically */
-            padding-bottom: env(safe-area-inset-bottom);
+            padding-bottom: env(safe-area-inset-bottom); 
         }
 
         /* --- Canvas Layer --- */
         #game-canvas {
             display: block;
             margin: 0 auto;
-            flex-grow: 0; 
-            /* Ensure it never exceeds container */
-            max-height: 100%; 
-            max-width: 100%;
+            flex-grow: 1; 
+            max-height: 100%;
+            object-fit: contain;
         }
 
         /* --- UI Overlay Layer --- */
@@ -89,7 +87,7 @@
             box-shadow: 0 10px 40px rgba(0,0,0,0.9);
             width: 95%;
             max-width: 480px; 
-            max-height: 95%;
+            max-height: 90dvh;
             overflow-y: auto;
         }
 
@@ -169,8 +167,7 @@
 <body>
 
 <div id="app">
-    <!-- Header Removed - Info now on Canvas -->
-    
+    <!-- Canvas handles visuals -->
     <canvas id="game-canvas"></canvas>
 
     <div id="ui-layer">
@@ -184,7 +181,6 @@
             </div>
 
             <div class="controls-grid">
-                <!-- Move -->
                 <div class="c-col-action">Move</div>
                 <div class="c-col-keys">
                     <span class="key"><svg class="arrow-icon" viewBox="0 0 10 10"><path d="M7 2 L3 5 L7 8 Z"/></svg></span>
@@ -193,7 +189,6 @@
                 <div class="c-col-or">or</div>
                 <div class="c-col-touch"><span class="touch-label">Swipe L/R</span></div>
 
-                <!-- Rotate -->
                 <div class="c-col-action">Rotate</div>
                 <div class="c-col-keys">
                     <span class="key"><svg class="arrow-icon" viewBox="0 0 10 10"><path d="M2 7 L5 3 L8 7 Z"/></svg></span>
@@ -201,7 +196,6 @@
                 <div class="c-col-or">or</div>
                 <div class="c-col-touch"><span class="touch-label">Tap</span></div>
 
-                <!-- Soft Drop -->
                 <div class="c-col-action">Soft Drop</div>
                 <div class="c-col-keys">
                     <span class="key"><svg class="arrow-icon" viewBox="0 0 10 10"><path d="M2 3 L5 7 L8 3 Z"/></svg></span>
@@ -209,7 +203,6 @@
                 <div class="c-col-or">or</div>
                 <div class="c-col-touch"><span class="touch-label">Swipe Down</span></div>
 
-                <!-- Hold -->
                 <div class="c-col-action">Hold Piece</div>
                 <div class="c-col-keys">
                     <span class="key">C</span>
@@ -217,15 +210,13 @@
                 <div class="c-col-or">or</div>
                 <div class="c-col-touch"><span class="touch-label">Swipe Up</span></div>
 
-                <!-- Hard Drop -->
                 <div class="c-col-action">Hard Drop</div>
                 <div class="c-col-keys">
                     <span class="key" style="font-size:7px;">SPACE</span>
                 </div>
                 <div class="c-col-or">or</div>
-                <div class="c-col-touch"><span class="touch-label">Hold</span></div> <!-- Updated Label -->
+                <div class="c-col-touch"><span class="touch-label">Hold</span></div>
 
-                <!-- Pause -->
                 <div class="c-col-action">Pause</div>
                 <div class="c-col-keys">
                     <span class="key">P</span>
@@ -256,7 +247,6 @@
 </div>
 
 <script>
-// --- Service Worker ---
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW registration failed', err));
@@ -271,7 +261,6 @@ const COLORS = {
     BG: '#202124',
     GRID: '#2d2e31'
 };
-
 const SHAPES = {
     I: [[0,0,0,0], [1,1,1,1], [0,0,0,0], [0,0,0,0]],
     J: [[1,0,0], [1,1,1], [0,0,0]],
@@ -298,14 +287,12 @@ class AudioController {
         this.metal.volume.value = -22;
         this.initialized = false;
     }
-
     async init() {
         if (this.enabled && !this.initialized) {
             await Tone.start();
             this.initialized = true;
         }
     }
-
     playMove() { if(this.initialized) this.pluck.triggerAttack("C3"); }
     playRotate() { if(this.initialized) this.pluck.triggerAttack("E3"); }
     playDrop() { if(this.initialized) this.metal.triggerAttackRelease("32n"); }
@@ -325,19 +312,19 @@ class Renderer {
         this.ctx = this.canvas.getContext('2d');
         this.particles = [];
         this.glowIntensity = 1;
+        this.megaPulse = 0; 
         this.activeColor = '#ffffff'; 
         this.resize();
         window.addEventListener('resize', () => this.resize());
     }
 
     resize() {
-        // Use the #app container's size to respect 100dvh
         const app = document.getElementById('app');
-        const availableHeight = app.clientHeight - 20; // 20px padding
+        const availableHeight = app.clientHeight - 20; 
         const availableWidth = app.clientWidth - 20;
 
         let cellSize = Math.floor(availableHeight / ROWS);
-        const requiredCols = COLS + 5.5; // Left UI (5) + Board (10) + Pad (0.5)
+        const requiredCols = COLS + 5.5; 
 
         if (cellSize * requiredCols > availableWidth) {
             cellSize = Math.floor(availableWidth / requiredCols);
@@ -346,13 +333,11 @@ class Renderer {
         this.cellSize = Math.max(cellSize, 10);
         this.boardWidth = this.cellSize * COLS;
         this.boardHeight = this.cellSize * ROWS;
-        
         this.sideMarginLeft = this.cellSize * 5; 
         this.sideMarginRight = this.cellSize * 0.5; 
         
         this.canvas.width = this.boardWidth + this.sideMarginLeft + this.sideMarginRight;
         this.canvas.height = this.boardHeight;
-        
         this.boardX = this.sideMarginLeft;
         this.boardY = 0;
     }
@@ -363,12 +348,16 @@ class Renderer {
     }
 
     drawBoard(boardMatrix) {
-        this.ctx.strokeStyle = this.activeColor;
-        this.ctx.lineWidth = 2;
-        this.ctx.globalAlpha = Math.max(0.2, this.glowIntensity); 
-        this.ctx.shadowBlur = 10 * this.glowIntensity;
-        this.ctx.shadowColor = this.activeColor;
+        const pulse = Math.max(this.glowIntensity, this.megaPulse);
+        
+        this.ctx.strokeStyle = this.megaPulse > 0.1 ? '#fff' : this.activeColor;
+        this.ctx.lineWidth = 2 + (this.megaPulse * 4); 
+        this.ctx.globalAlpha = Math.max(0.2, pulse); 
+        this.ctx.shadowBlur = 10 * pulse + (this.megaPulse * 20); 
+        this.ctx.shadowColor = this.megaPulse > 0.1 ? '#ffcc00' : this.activeColor; 
+        
         this.ctx.strokeRect(this.boardX, this.boardY, this.boardWidth, this.boardHeight);
+        
         this.ctx.globalAlpha = 1.0; 
         this.ctx.shadowBlur = 0; 
 
@@ -431,30 +420,27 @@ class Renderer {
     }
 
     drawUI(score, lines, nextPiece, holdPiece) {
-        const fs = Math.max(9, Math.floor(this.cellSize * 0.4)); // Scale text
+        const fs = Math.max(9, Math.floor(this.cellSize * 0.4)); 
         this.ctx.font = `${fs}px "Press Start 2P"`;
         this.ctx.textAlign = 'center';
 
-        const cx = this.sideMarginLeft / 2; // Center of Left Panel
+        const cx = this.sideMarginLeft / 2; 
         let y = this.cellSize * 2;
 
-        // --- TITLE ---
         this.ctx.fillStyle = '#888';
         this.ctx.fillText("LEGALLY", cx, y); y += fs * 1.5;
         this.ctx.fillText("DISTINCT", cx, y); y += fs * 1.5;
         this.ctx.fillStyle = '#fff';
         this.ctx.fillText("TETROMINO", cx, y); y += fs * 1.5;
-        this.ctx.fillStyle = COLORS.L; // Orange
+        this.ctx.fillStyle = COLORS.L; 
         this.ctx.fillText("v2", cx, y); y += fs * 3;
 
-        // --- SCORE ---
         this.ctx.fillStyle = '#888';
         this.ctx.fillText("SCORE", cx, y); y += fs * 1.5;
         this.ctx.fillStyle = '#fff';
         this.ctx.font = `${fs+2}px "Press Start 2P"`;
         this.ctx.fillText(score, cx, y); y += fs * 3;
 
-        // --- LINES ---
         this.ctx.font = `${fs}px "Press Start 2P"`;
         this.ctx.fillStyle = '#888';
         this.ctx.fillText("LINES", cx, y); y += fs * 1.5;
@@ -462,7 +448,6 @@ class Renderer {
         this.ctx.font = `${fs+2}px "Press Start 2P"`;
         this.ctx.fillText(lines, cx, y); y += fs * 4;
 
-        // --- HOLD ---
         this.ctx.font = `${fs}px "Press Start 2P"`;
         this.ctx.fillStyle = '#aaa';
         this.ctx.fillText("HOLD", cx, y); y += fs * 1.2;
@@ -477,7 +462,6 @@ class Renderer {
         }
         y += this.cellSize * 4; 
 
-        // --- NEXT ---
         this.ctx.fillStyle = '#aaa';
         this.ctx.fillText("NEXT", cx, y); y += fs * 1.2;
         if (nextPiece) {
@@ -517,6 +501,10 @@ class Renderer {
         }
     }
 
+    triggerMegaPulse() {
+        this.megaPulse = 2.0; 
+    }
+
     drawParticles() {
         for (let i = this.particles.length - 1; i >= 0; i--) {
             let p = this.particles[i];
@@ -534,6 +522,10 @@ class Renderer {
     animateGlow() {
         const time = Date.now() / 1500; 
         this.glowIntensity = 0.5 + Math.sin(time) * 0.4; 
+        if (this.megaPulse > 0) {
+            this.megaPulse *= 0.95;
+            if (this.megaPulse < 0.01) this.megaPulse = 0;
+        }
     }
 
     triggerInputPulse() {
@@ -551,9 +543,14 @@ class Game {
         this.lines = 0;
         this.level = 1;
         
-        const savedData = JSON.parse(localStorage.getItem('ldt_highscore')) || { name: 'AAA', score: 0 };
-        this.highScore = savedData.score;
-        this.highScoreName = savedData.name;
+        try {
+            const savedData = JSON.parse(localStorage.getItem('ldt_highscore')) || { name: 'AAA', score: 0 };
+            this.highScore = savedData.score;
+            this.highScoreName = savedData.name;
+        } catch(e) {
+            this.highScore = 0; 
+            this.highScoreName = "AAA";
+        }
         
         this.gameOver = false;
         this.isPaused = false;
@@ -563,6 +560,7 @@ class Game {
         this.canHold = true;
         this.dropInterval = 1000;
         this.lastDropTime = 0;
+        this.newRecord = false; // Flag to track new high score in current session
 
         this.screenStart = document.getElementById('start-screen');
         this.screenGameOver = document.getElementById('game-over-screen');
@@ -580,6 +578,13 @@ class Game {
         this.bindEvents();
         this.loop = this.loop.bind(this);
         this.requestId = null;
+        
+        if (localStorage.getItem('ldt_saved_game')) {
+            this.btnStart.textContent = "CONTINUE GAME";
+            this.hasSavedGame = true;
+        } else {
+            this.hasSavedGame = false;
+        }
     }
 
     createBoard() {
@@ -592,24 +597,89 @@ class Game {
     }
 
     saveHighScore() {
-        if (this.score > this.highScore) {
+        if (this.newRecord) {
             let name = this.nameInput.value.trim().toUpperCase() || "ANON";
-            this.highScore = this.score;
             this.highScoreName = name;
-            localStorage.setItem('ldt_highscore', JSON.stringify({ name: name, score: this.score }));
+            localStorage.setItem('ldt_highscore', JSON.stringify({ name: name, score: this.highScore }));
             this.updateHighScoreDisplay();
+            this.newRecord = false; // Reset flag after saving
+        }
+    }
+
+    saveGameState() {
+        if (this.gameOver) {
+            localStorage.removeItem('ldt_saved_game');
+            return;
+        }
+        const state = {
+            board: this.board,
+            score: this.score,
+            lines: this.lines,
+            level: this.level,
+            bag: this.bag,
+            currentPiece: this.currentPiece,
+            nextPieceType: this.nextPieceType,
+            holdPieceType: this.holdPieceType,
+            canHold: this.canHold
+        };
+        localStorage.setItem('ldt_saved_game', JSON.stringify(state));
+        console.log("Game Saved");
+    }
+
+    loadGameState() {
+        try {
+            const raw = localStorage.getItem('ldt_saved_game');
+            if (!raw) return false;
+            const state = JSON.parse(raw);
+            this.board = state.board;
+            this.score = state.score;
+            this.lines = state.lines;
+            this.level = state.level;
+            this.bag = state.bag;
+            this.currentPiece = state.currentPiece;
+            this.nextPieceType = state.nextPieceType;
+            this.holdPieceType = state.holdPieceType;
+            this.canHold = state.canHold;
+            this.gameOver = false;
+            this.isPaused = false;
+            return true;
+        } catch(e) {
+            console.error("Failed to load save", e);
+            return false;
         }
     }
 
     bindEvents() {
-        this.btnStart.addEventListener('click', () => { this.audio.init(); this.start(); });
+        this.btnStart.addEventListener('click', () => { 
+            this.audio.init(); 
+            if (this.hasSavedGame && this.btnStart.textContent === "CONTINUE GAME") {
+                if (this.loadGameState()) {
+                    this.screenStart.classList.add('hidden');
+                    this.lastDropTime = Date.now();
+                    this.loop();
+                } else {
+                    this.start(); 
+                }
+            } else {
+                this.start(); 
+            }
+        });
+        
         this.btnResume.addEventListener('click', () => this.togglePause());
-        this.btnRestart.addEventListener('click', () => { this.saveHighScore(); this.start(); });
+        
+        this.btnRestart.addEventListener('click', () => {
+            this.saveHighScore();
+            localStorage.removeItem('ldt_saved_game'); 
+            this.start();
+        });
+        
         this.btnQuit.addEventListener('click', () => {
             this.saveHighScore();
+            localStorage.removeItem('ldt_saved_game'); 
             this.screenGameOver.classList.add('hidden');
             this.screenStart.classList.remove('hidden');
             this.title.innerText = "CONTROLS";
+            this.btnStart.textContent = "START GAME"; 
             this.btnStart.classList.remove('hidden');
             this.btnResume.classList.add('hidden');
             this.renderer.clear();
@@ -653,39 +723,29 @@ class Game {
             touchStartX = e.changedTouches[0].screenX;
             touchStartY = e.changedTouches[0].screenY;
             
-            // Start Long Press Timer
             isLongPressHandled = false;
             longPressTimer = setTimeout(() => {
                 this.hardDrop();
                 isLongPressHandled = true;
-                if(navigator.vibrate) navigator.vibrate(50); // Feedback
+                if(navigator.vibrate) navigator.vibrate(50); 
             }, LONG_PRESS_MS);
 
             this.renderer.triggerInputPulse();
         }, {passive: false});
 
-        // Add touchmove to cancel long press if dragging
         document.addEventListener('touchmove', (e) => {
              if (e.target.tagName === 'BUTTON' || e.target === this.nameInput) return;
-             // Prevent default scrolling
              e.preventDefault(); 
-             
              const x = e.changedTouches[0].screenX;
              const y = e.changedTouches[0].screenY;
-             
-             // If moved more than 10px, cancel long press
-             if (Math.abs(x - touchStartX) > 10 || Math.abs(y - touchStartY) > 10) {
-                 clearTimeout(longPressTimer);
-             }
+             if (Math.abs(x - touchStartX) > 10 || Math.abs(y - touchStartY) > 10) { clearTimeout(longPressTimer); }
         }, {passive: false});
 
         document.addEventListener('touchend', (e) => {
             if (e.target.tagName === 'BUTTON' || e.target === this.nameInput) return;
-            
-            clearTimeout(longPressTimer); // Cancel timer
-            
+            clearTimeout(longPressTimer); 
             if (this.gameOver || this.isPaused) return;
-            if (isLongPressHandled) return; // Already handled
+            if (isLongPressHandled) return;
 
             const touchEndX = e.changedTouches[0].screenX;
             const touchEndY = e.changedTouches[0].screenY;
@@ -694,10 +754,7 @@ class Game {
             const absDx = Math.abs(dx);
             const absDy = Math.abs(dy);
 
-            if (absDx < 10 && absDy < 10) {
-                this.rotate(); // Single Tap
-                return;
-            }
+            if (absDx < 10 && absDy < 10) { this.rotate(); return; }
 
             if (absDx > absDy) {
                 if (dx > 30) this.move(1); else if (dx < -30) this.move(-1);
@@ -716,8 +773,8 @@ class Game {
         this.isPaused = false;
         this.bag = [];
         this.holdPieceType = null;
-        
-        this.updateUI();
+        this.newRecord = false; // Reset flag for new game
+
         this.screenStart.classList.add('hidden');
         this.screenGameOver.classList.add('hidden');
         this.spawnPiece();
@@ -730,6 +787,7 @@ class Game {
         if (this.gameOver) return;
         this.isPaused = !this.isPaused;
         if (this.isPaused) {
+            this.saveGameState(); // Auto-save on pause
             this.title.innerText = "PAUSED";
             this.btnStart.classList.add('hidden');
             this.btnResume.classList.remove('hidden');
@@ -744,11 +802,19 @@ class Game {
     endGame() {
         this.gameOver = true;
         this.audio.playGameOver();
-        if (this.score > this.highScore) { this.highScore = this.score; }
+        localStorage.removeItem('ldt_saved_game'); 
         
         document.getElementById('final-score').innerText = this.score;
         document.getElementById('final-lines').innerText = this.lines;
-        if (this.highScoreName !== 'ANON') { this.nameInput.value = this.highScoreName; }
+
+        if (this.score > this.highScore) {
+            this.highScore = this.score;
+            this.newRecord = true; // Mark as new record for saving
+            this.nameInput.value = ""; 
+            this.nameInput.focus();
+        } else if (this.highScoreName !== 'ANON') {
+            this.nameInput.value = this.highScoreName;
+        }
 
         this.screenGameOver.classList.remove('hidden');
     }
@@ -788,7 +854,7 @@ class Game {
         this.canHold = true;
     }
     hold() {
-        if (!this.canHold || this.isPaused || this.gameOver) return;
+        if (this.isPaused || this.gameOver) return;
         this.audio.playHold();
         if (this.holdPieceType === null) {
             this.holdPieceType = this.currentPiece.typeId;
@@ -836,15 +902,11 @@ class Game {
             const points = [0, 40, 100, 300, 1200];
             this.score += points[linesCleared] * this.level;
             this.audio.playLineClear(linesCleared);
+            if (linesCleared >= 4) { this.renderer.triggerMegaPulse(); }
             if (this.lines > this.level * 10) { this.level++; this.dropInterval = Math.max(100, 1000 - (this.level * 50)); }
         }
     }
-    updateUI() {
-        // Redraw UI on every update in case score/lines change
-        // In this canvas implementation, the loop() handles drawing, but we update text if needed?
-        // Actually, loop() draws UI every frame, so we don't need manual DOM updates unless we used DOM overlays.
-        // Wait, the UI (Score/Lines) is drawn on canvas in drawUI().
-    }
+    updateUI() { }
 }
 
 const game = new Game();
