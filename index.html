@@ -54,7 +54,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: center; /* Center canvas vertically */
             padding-bottom: env(safe-area-inset-bottom); 
             padding-left: env(safe-area-inset-left);
             padding-right: env(safe-area-inset-right);
@@ -180,6 +180,7 @@
             color: #555;
             cursor: pointer;
             padding: 5px;
+            user-select: none;
         }
 
     </style>
@@ -735,20 +736,33 @@ class Game {
             this.renderer.clear();
         });
 
-        // 5-TAP FORCE UPDATE LOGIC
-        let tapCount = 0;
-        let tapTimer = null;
-        this.versionDisplay.addEventListener('click', () => {
-            tapCount++;
-            clearTimeout(tapTimer);
-            tapTimer = setTimeout(() => { tapCount = 0; }, 1000);
-            if (tapCount >= 5) {
-                if (confirm("Force update and clear cache?")) {
-                    forceUpdate();
-                }
-                tapCount = 0;
+        // 5-TAP FORCE UPDATE LOGIC - REPLACED WITH HOLD
+        let versionPressTimer = null;
+        
+        const handleVersionPressStart = (e) => {
+            // Prevent default to stop mouse emulation or text selection if desired
+            if(e.cancelable) e.preventDefault();
+            
+            versionPressTimer = setTimeout(() => {
+                 if (confirm("Force update and clear cache?")) {
+                     forceUpdate();
+                 }
+            }, 2000); // 2 seconds
+        };
+
+        const handleVersionPressEnd = (e) => {
+            if (versionPressTimer) {
+                clearTimeout(versionPressTimer);
+                versionPressTimer = null;
             }
-        });
+        };
+
+        this.versionDisplay.addEventListener('touchstart', handleVersionPressStart, {passive: false});
+        this.versionDisplay.addEventListener('touchend', handleVersionPressEnd);
+        this.versionDisplay.addEventListener('mousedown', handleVersionPressStart);
+        this.versionDisplay.addEventListener('mouseup', handleVersionPressEnd);
+        this.versionDisplay.addEventListener('mouseleave', handleVersionPressEnd);
+
 
         if(this.nameInput) {
              this.nameInput.addEventListener('focus', () => { this.nameInput.select(); });
@@ -778,6 +792,7 @@ class Game {
         const LONG_PRESS_MS = 300;
 
         document.addEventListener('touchstart', (e) => {
+            // Updated to NOT prevent default on version display, handled in specific listener
             if (e.target.tagName !== 'BUTTON' && e.target !== this.nameInput && e.target !== this.versionDisplay) {
                 if(e.cancelable) e.preventDefault();
             }
