@@ -29,15 +29,7 @@
             --glow-color: rgba(255, 255, 255, 0.5);
         }
 
-        /* Added -webkit-touch-callout: none to prevent iOS magnifier */
-        * { 
-            box-sizing: border-box; 
-            touch-action: none; 
-            user-select: none; 
-            -webkit-user-select: none; 
-            -webkit-touch-callout: none; 
-            -webkit-tap-highlight-color: transparent;
-        }
+        * { box-sizing: border-box; touch-action: none; user-select: none; -webkit-user-select: none; }
 
         body {
             margin: 0;
@@ -134,7 +126,6 @@
             width: 100%;
             box-shadow: 0 4px 0 #0d47a1;
             transition: transform 0.05s;
-            /* Allow default touch behavior on buttons so they click properly */
             touch-action: manipulation; 
         }
         button:active { transform: translateY(4px); box-shadow: 0 0 0 #0d47a1; }
@@ -178,10 +169,18 @@
             font-family: var(--font-main); font-size: 14px; padding: 8px; 
             width: 140px; text-align: center; border-radius: 4px; 
             text-transform: uppercase; letter-spacing: 2px;
-            user-select: text; /* Allow text selection inside input */
-            -webkit-user-select: text;
+            user-select: text; -webkit-user-select: text;
         }
         .name-input:focus { outline: none; border-color: var(--accent-color); }
+        
+        /* --- Version Display --- */
+        #version-display {
+            margin-top: 20px;
+            font-size: 8px;
+            color: #555;
+            cursor: pointer;
+            padding: 5px;
+        }
 
     </style>
 </head>
@@ -192,6 +191,7 @@
 
     <div id="ui-layer">
         
+        <!-- Start / Pause / Controls Screen -->
         <div id="start-screen" class="screen">
             <h2 id="screen-title">CONTROLS</h2>
             
@@ -246,8 +246,11 @@
 
             <button id="btn-start">START GAME</button>
             <button id="btn-resume" class="hidden">RESUME</button>
+            
+            <div id="version-display">v2.7</div>
         </div>
 
+        <!-- Game Over Screen -->
         <div id="game-over-screen" class="screen hidden">
             <h2 style="color:#ff5252">GAME OVER</h2>
             <div class="stat-row"><span>Final Score</span><span class="stat-val" id="final-score">0</span></div>
@@ -265,6 +268,25 @@
 </div>
 
 <script>
+// --- Service Worker & Version Control ---
+const APP_VERSION = 'v2.7';
+
+async function forceUpdate() {
+    if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (let registration of registrations) {
+            await registration.unregister();
+        }
+        if ('caches' in window) {
+            const keys = await caches.keys();
+            await Promise.all(keys.map(key => caches.delete(key)));
+        }
+        window.location.reload(true);
+    } else {
+        window.location.reload(true);
+    }
+}
+
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW registration failed', err));
@@ -588,10 +610,14 @@ class Game {
         this.btnRestart = document.getElementById('btn-restart');
         this.btnQuit = document.getElementById('btn-quit');
         this.title = document.getElementById('screen-title');
+        this.versionDisplay = document.getElementById('version-display');
         
         this.uiHighScoreStartVal = document.getElementById('start-high-score-val');
         this.uiHighScoreStartName = document.getElementById('start-high-score-name');
         this.nameInput = document.getElementById('high-score-name');
+
+        // Version display
+        this.versionDisplay.innerText = APP_VERSION;
 
         this.updateHighScoreDisplay();
         this.bindEvents();
@@ -642,7 +668,6 @@ class Game {
             canHold: this.canHold
         };
         localStorage.setItem('ldt_saved_game', JSON.stringify(state));
-        console.log("Game Saved");
     }
 
     loadGameState() {
@@ -669,7 +694,7 @@ class Game {
     }
 
     bindEvents() {
-        // PREVENT CONTEXT MENU (Right Click / Long Press)
+        // PREVENT CONTEXT MENU
         document.addEventListener('contextmenu', event => event.preventDefault());
 
         this.btnStart.addEventListener('click', () => { 
@@ -707,6 +732,21 @@ class Game {
             this.renderer.clear();
         });
 
+        // 5-TAP FORCE UPDATE LOGIC
+        let tapCount = 0;
+        let tapTimer = null;
+        this.versionDisplay.addEventListener('click', () => {
+            tapCount++;
+            clearTimeout(tapTimer);
+            tapTimer = setTimeout(() => { tapCount = 0; }, 1000);
+            if (tapCount >= 5) {
+                if (confirm("Force update and clear cache?")) {
+                    forceUpdate();
+                }
+                tapCount = 0;
+            }
+        });
+
         if(this.nameInput) {
              this.nameInput.addEventListener('focus', () => { this.nameInput.select(); });
              this.nameInput.addEventListener('keydown', (e) => { e.stopPropagation(); if (e.key === 'Enter') { this.saveHighScore(); this.start(); } });
@@ -735,12 +775,11 @@ class Game {
         const LONG_PRESS_MS = 300;
 
         document.addEventListener('touchstart', (e) => {
-            // Prevent default here to stop context menus and selections
-            if (e.target.tagName !== 'BUTTON' && e.target !== this.nameInput) {
+            if (e.target.tagName !== 'BUTTON' && e.target !== this.nameInput && e.target !== this.versionDisplay) {
                 if(e.cancelable) e.preventDefault();
             }
 
-            if (e.target.tagName === 'BUTTON' || e.target === this.nameInput) return;
+            if (e.target.tagName === 'BUTTON' || e.target === this.nameInput || e.target === this.versionDisplay) return;
             
             if (e.touches.length === 2) {
                 this.togglePause();
@@ -761,7 +800,6 @@ class Game {
         }, {passive: false});
 
         document.addEventListener('touchmove', (e) => {
-             // Prevent defaults always
              if(e.cancelable) e.preventDefault();
 
              if (e.target.tagName === 'BUTTON' || e.target === this.nameInput) return;
@@ -772,7 +810,6 @@ class Game {
         }, {passive: false});
 
         document.addEventListener('touchend', (e) => {
-            // Prevent defaults always
             if(e.cancelable) e.preventDefault();
 
             if (e.target.tagName === 'BUTTON' || e.target === this.nameInput) return;
