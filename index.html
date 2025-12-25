@@ -272,6 +272,9 @@
 const APP_VERSION = 'v2.7';
 
 async function forceUpdate() {
+    // Clear saved game state so the button resets
+    localStorage.removeItem('ldt_saved_game');
+
     if ('serviceWorker' in navigator) {
         const registrations = await navigator.serviceWorker.getRegistrations();
         for (let registration of registrations) {
