@@ -255,7 +255,7 @@
             <button id="btn-start">START GAME</button>
             <button id="btn-resume" class="hidden">RESUME</button>
             
-            <div id="version-display">v2.8</div>
+            <div id="version-display">v2.9</div> <!-- Version bumped to ensure update -->
         </div>
 
         <!-- Game Over Screen -->
@@ -277,11 +277,10 @@
 
 <script>
 // --- CONFIGURATION ---
-const APP_VERSION = 'v2.8'; // Bumping version to force save validation
+const APP_VERSION = 'v2.9';
 
 // --- UTILS ---
 async function forceUpdate() {
-    // Explicitly clear the saved game to ensure "Start Game" appears
     localStorage.removeItem('ldt_saved_game');
     
     if ('serviceWorker' in navigator) {
@@ -769,7 +768,11 @@ class Game {
         let versionPressTimer = null;
         
         const handleVersionPressStart = (e) => {
-            if(e.cancelable) e.preventDefault();
+            // Don't prevent default on version press to allow standard interaction if short
+            // But prevent if we want to stop zooming etc. 
+            // Actually, we want to allow clicks.
+            // Let's rely on CSS touch-action and user-select first.
+            
             versionPressTimer = setTimeout(() => {
                  if (confirm("Force update and clear cache?")) {
                      forceUpdate();
@@ -820,11 +823,17 @@ class Game {
         const LONG_PRESS_MS = 300;
 
         document.addEventListener('touchstart', (e) => {
-            if (e.target.tagName !== 'BUTTON' && e.target !== this.nameInput && e.target !== this.versionDisplay) {
-                if(e.cancelable) e.preventDefault();
+            // FIX: Don't prevent default on BUTTONS/INPUTS, preventing clicks!
+            // We check targets first.
+            const target = e.target;
+            const isControl = target.tagName === 'BUTTON' || target === this.nameInput || target === this.versionDisplay;
+
+            if (!isControl) {
+                // If not a control, we prevent default to stop scrolling/zooming/menus on game area
+                if (e.cancelable) e.preventDefault();
             }
 
-            if (e.target.tagName === 'BUTTON' || e.target === this.nameInput || e.target === this.versionDisplay) return;
+            if (isControl) return; // Don't run game logic on UI controls
             
             if (e.touches.length === 2) {
                 this.togglePause();
@@ -854,9 +863,16 @@ class Game {
         }, {passive: false});
 
         document.addEventListener('touchend', (e) => {
-            if(e.cancelable) e.preventDefault();
+             // FIX: Don't prevent default blindly on touchend, or buttons won't click
+            const target = e.target;
+            const isControl = target.tagName === 'BUTTON' || target === this.nameInput || target === this.versionDisplay;
 
-            if (e.target.tagName === 'BUTTON' || e.target === this.nameInput) return;
+            if (!isControl) {
+                if (e.cancelable) e.preventDefault();
+            }
+
+            if (isControl) return;
+
             clearTimeout(longPressTimer); 
             if (this.gameOver || this.isPaused) return;
             if (isLongPressHandled) return;
